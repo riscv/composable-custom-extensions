@@ -1,8 +1,5 @@
 # Governance
-This project for the template specification is governed by the Documentation SIG.
+This project for the Composable Extensions specification is governed by the Composable Extensions Task Group.
 
-The group can be joined by RISC-V members at: https://lists.riscv.org/g/sig-documentation.
-
-Mailing list archives are available at: https://lists.riscv.org/g/sig-documentation/topics.
-
-**_NOTE:_** PROJECTS BUILT USING THE TEMPLATE SHOULD UPDATE THE ABOVE TEXT AS-NEEDED.
+The group can be joined by RISC-V members at: https://lists.riscv.org/g/tech-composable-extensions.
+Mailing list archives are available at: https://lists.riscv.org/g/tech-composable-extensions/topics.
