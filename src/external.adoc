@@ -1,0 +1,41 @@
+[[external]]
+[appendix]
+= External Specifications
+
+This section contains changes to external specifications for RISC-V
+Composable Custom Extensions.  It is intended that as these sections
+are incorporated into the upstream specification or similar, they will
+be removed from this document.  External specifications include both
+RISC-V and non-RISC-V specifications and other information
+specification mechanisms.
+
+=== Devicetree
+
+=== ACPI
+
+[NOTE]
+====
+This section will be incorporated into the ACPI Specification.
+====
+
+=== User Space ABI
+
+[NOTE]
+====
+This section will be incorporated into the RISC-V psABI Specification.
+====
+
+==== Composable Custom Extension Aware Calling Convention
+
+==== Legacy Interoperability Calling Convention
+
+=== User Space API
+
+=== SBI
+
+[NOTE]
+====
+This section will be incorporated into the RISC-V SBI Specification.
+====
+
+=== Linux

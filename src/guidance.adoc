@@ -1,0 +1,10 @@
+[[guidance]]
+[appendix]
+= Guidance
+
+This section provides guidance for developing Composable Custom
+Extensions.  This entire section is non-normative.
+
+=== Software Recommendations
+
+=== Hardware Recommendations

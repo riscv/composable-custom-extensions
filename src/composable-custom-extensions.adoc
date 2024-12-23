@@ -1,10 +1,10 @@
-= RISC-V Example Specification Document (Zexmpl)
-Authors: Author 1, Author 2
+= RISC-V Composable Custom Extensions (Ztodo)
+Authors: RISC-V Composable Custom Extensions Task Group
 :docgroup: RISC-V Task Group
-:description: RISC-V Example Specification Document (Zexmpl)
+:description: RISC-V Composable Custom Extensions Specification Document (Ztodo)
 :company: RISC-V.org
-:revdate: 1/2023
-:revnumber: 1.0
+:revdate: 2024-12-23
+:revnumber: 0.0
 :revremark: This document is under development. Expect potential changes. Visit http://riscv.org/spec-state for further details.
 :revinfo:
 :url-riscv: http://riscv.org
@@ -21,7 +21,7 @@ Authors: Author 1, Author 2
 //:WaveDromEditorApp: app/wavedrom-editor.app
 :imagesoutdir: ../build/images
 :srcdir: src
-:bibtex-file: {srcdir}/example.bib
+:bibtex-file: {srcdir}/biblio.bib
 :bibtex-order: alphabetical
 :bibtex-style: apa
 :icons: font
@@ -61,7 +61,16 @@ Copyright 2024 by RISC-V International.
 include::contributors.adoc[]
 
 include::intro.adoc[]
-include::chapter2.adoc[]
+include::isa.adoc[]
+include::isa-priv.adoc[]
+include::isa-unpriv.adoc[]
+include::isa-state.adoc[]
+include::non-isa.adoc[]
+include::criteria.adoc[]
+include::li.adoc[]
+
+include::external.adoc[]
+include::guidance.adoc[]
 
 // The index must precede the bibliography
 include::index.adoc[]

@@ -1,0 +1,5 @@
+[[non-isa]]
+= Non-ISA Specification
+
+This section contains the non-ISA specification for RISC-V Composable
+Custom Extensions.
