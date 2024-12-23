@@ -1,2 +1,2 @@
 [[isa-state]]
-== Privileged State Management 
+== Privileged State Management
