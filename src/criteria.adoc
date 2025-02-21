@@ -61,7 +61,7 @@ A custom extension is a _composable_ custom extension _if-and-only-if_:
 2. The functional behavior of a system of harts and CXs, including this
    custom extension, is the same regardless of what hardware implements
    them.
-  
+
 ...
 
 === Composable Memory Access Behavior
