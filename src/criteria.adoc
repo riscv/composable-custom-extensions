@@ -1,6 +1,67 @@
 [[criteria]]
-== Composability criteria
+== Composability Criteria
+
+=== Introduction (non-normative)
+
+The CX Composability Criteria comprise a set of rules that determine which
+RISC-V custom extensions are deemed _composable_, forming a subcategory
+of custom extensions known as _composable custom extensions_.
+
+The Criteria promote dependable reusability of CXs in diverse composition
+settings by ensuring that composable custom extensions exhibit composition
+invariance and portability, so _that which works separately, works
+together_.
+
+Informally, a custom extension is dependably composable when it satisfies:
+
+1. _Composition invariance_: the extension's functional behavior is
+   unchanged in the presence or absence of other CXs;
+
+2. _Portability_: the functional behavior of a system of harts and CXs,
+   including this CX, is the same regardless of what hardware implements
+   them.
+
+=== Requirements (non-normative)
+
+1. Support composition invariance so that the functional behavior of a
+   CX does not change in the presence/absence of other CXs;
+
+2. Support portability so that the functional behavior of a CX does not
+   change across different hardware implementations of the hart or the CX;
+
+3. Support stateful CXs;
+
+4. Support CXs that access integer registers.
+
+==== Potential requirements
+
+1. Support CXs that access floating-point registers;
+
+2. Support CXs that access shared memory.
 
 === Basic Criteria
+
+A custom instruction is a RISC-V instruction with a major opcode of `custom-0`/`-1`/`-2`/`-3`.
+
+A custom extension is a set of custom instructions plus a set of RISC-V custom CSRs,
+with a specified functional behavior and state model.
+
+A custom extension is a _composable_ custom extension _if-and-only-if_:
+
+1. The entire functional behavior and effect of executing each custom
+   instruction on a hart, or reading or writing each custom CSR on a hart
+   is strictly limited to reads and writes of that hart's:
+
+   a. integer registers, or
+   b. floating-point registers or `fcsr` CSR, or
+   c. vector registers or _vector CSRs_ (TBD), or
+   d. the currently selected custom extension state context, including
+      its custom CSRs.
+
+2. The functional behavior of a system of harts and CXs, including this
+   custom extension, is the same regardless of what hardware implements
+   them.
+  
+...
 
 === Composable Memory Access Behavior

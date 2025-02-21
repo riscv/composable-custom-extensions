@@ -4,3 +4,4 @@ This RISC-V specification has been contributed to directly or indirectly by:
 
 [%hardbreaks]
 * Darius Rad <darius@bluespec.com>
+* Jan Gray <jan@fpga.org>
