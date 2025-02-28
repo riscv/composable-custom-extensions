@@ -256,4 +256,3 @@ Not composable.  Its behavior extends beyond the execution of the instruction.
 
 10. `loop rs1,imm`: repeat next `imm` instructions, `X[rs1]` times.
 Not composable. PC access is not _composable state_. Also, `loop` does not manifest one-instruction-at-a-time behavior.
-
