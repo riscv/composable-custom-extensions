@@ -15,44 +15,53 @@ together_.
 A custom extension is dependably composable when it satisfies:
 
 1. _Composition invariance_: the extension's functional behavior is
-unchanged in the presence or absence of other CXs;
+unchanged in the presence or absence of other CXs.
 
 2. _Portability_: the functional behavior of a system of harts and CXs,
 including this CX, is the same regardless of what hardware implements
 them.
 
-=== Requirements (non-normative)
+=== Requirements (non-normative) (temporary, will be deleted)
 
 1. Support composition invariance so that the functional behavior of a
-CX does not change in the presence/absence of other CXs;
+CX does not change in the presence/absence of other CXs.
 
 2. Support portability so that the functional behavior of a CX does not
-change across different hardware implementations of the hart or the CX;
+change across different hardware implementations of the hart or the CX.
 
-3. Support stateful CXs;
+3. Support stateful CXs.
 
 4. Support CXs that access integer registers.
 
 ==== Potential requirements
 
-1. Support CXs that access floating-point registers, vector registers,
+[start=5]
+5. Support CXs that access floating-point registers, vector registers,
 and shared memory.
 
+=== Definitions
+(Edit: eventually move definitions to a definitions section.)
+
+A _custom instruction_ is a RISC-V instruction with a major opcode of `custom-0`/`-1`/`-2`/`-3`.
+
+A _custom extension_ is an abstract instruction set _contract_, comprising
+a set of custom instructions plus a set of RISC-V custom CSRs plus
+extension state, all with a specified _functional behavior_ and state model.
+
+_Functional behavior_ is the set of emergent observable side-effects
+(observable by standard RISC-V instructions) that must occur upon
+executing the specified custom instructions. Functional behavior does
+not include timing-based behavior.
+
 === Criteria
-
-A custom instruction is a RISC-V instruction with a major opcode of `custom-0`/`-1`/`-2`/`-3`.
-
-A custom extension comprises a set of custom instructions plus a set
-of RISC-V custom CSRs plus extension state, with a specified functional
-behavior and state model.
-
 A custom extension is a _composable_ custom extension _if-and-only-if_:
 
-1. Its instructions appear to execute in program order on the local hart.
+1. Its instructions appear to execute, one-at-a-time, in program order
+on the local hart.
 
 2. Each of its instructions only reads some _composable state_, computes
 a pure function of this state (and no other state), then either raises
-an exception, or writes some composable state. _Composable state_
+an exception or writes some composable state. _Composable state_
 comprises the selected extension's state, including its custom CSRs,
 plus the hart's integer registers, floating-point registers, `fcsr` CSR,
 vector registers, vector context status in `mstatus` and in `vsstatus`,
@@ -67,18 +76,184 @@ additionally follow RVTSO at the instruction level.
 4. Instructions that access memory may raise the usual memory access
 exceptions.
 
-5. The extension is specified such that its functional behavior
-is identical on any implementation that meets its requirements and
-specification.
+5. The extension is specified so that any implementation of the extension
+exhibits _identical_ functional behavior.
+
+==== Extension state
+
+[start=6]
+6. A _composable_ custom extension may have _extension state_. An
+implementation of the extension may support zero, one, more state
+instances per hart.
 
 === Discussion (non-normative)
 
-To write-up:
+==== "Bottom up" criteria
 
-* How to sift through multiverse of possible custom extensions to those that are dependable to compose
-* Approach: "what's allowed from 0" criteria --vs.-- "what's not allowed from infinity" criteria
-* Instruction-at-a-time model -- disallow surprising "continuous" sharing of hart state
-* Custom instruction accesses to memory: slavishly recapitulates -V vector memory consistency model
-* Isolation enables composition: no access to other extensions' state, no access to other state contexts of this extension
-* Accomodates both unresolved 1:1 hart:extension state model vs. m:n extension state instances model
-* Looks ahead to implementable composable hardware unit models / logic interface support
+There is a boundless multiverse of possible custom extensions, simple,
+complex, and bizarre. But which custom extensions are, by design,
+dependably composable? The composability criteria aim to identify a
+subcategory of custom extensions that are dependably composable. How to
+capture that?
+
+One approach would be to work "top down" from "all custom extensions"
+and then subtracts those extensions that are obviously not composable,
+for example, that would conflict with another instance of itself. However
+it would be challenging to enumerate the myriad ways that custom
+extensions might conflict, and to have confidence that the list of
+prohibited practices is complete.
+
+The present draft criteria works "bottom up", starting with "no custom
+extensions are composable", and then adds _some_ capabilities that do
+not break composition. Although this may preclude finding certain useful
+custom extensions _composable_, at least those are that composable will
+compose gracefully.
+
+==== Why these criteria?
+
+1. _Its instructions appear to execute, one-at-a-time, in program order
+on the local hart._
+
+The criteria support dependable composition. They also encompass a
+specific subcategory of computation-oriented extensions which compute new
+data from old data and which are amenable to implementation using modular,
+instruction-at-a-time composable extension units. _Instruction-at-a-time_
+is important because it is feasible to retrieve and provide a specific
+subset of architectural state (hart state) to an extension unit for
+the duration of the custom instruction, but is less feasible for such an
+extension unit implementation to continuously consult/modify _any-and-all_
+hart state, and still less likely that such custom instructions, whose
+side effects continuously operate even after instruction commit,
+can achieve dependable composition alongside other such extensions'
+similar instructions.
+
+[start=2]
+2. _Each of its instructions only reads some composable state, computes
+a pure function of this state (and no other state), then either raises
+an exception, or writes some composable state. Composable state
+comprises the selected extension's state, including its custom CSRs,
+plus the hart's integer registers, floating-point registers, `fcsr` CSR,
+vector registers, vector context status in `mstatus` and in `vsstatus`,
+`vtype`, `vl`, `vlenb`, `vstart`, `vcsr` CSRs, and loads and stores to
+memory as if performed by the local hart._
+
+This criterion helps ensure that composable custom extensions are isolated
+from one another. Thus CX#1 cannot be specified to read/write extension
+state of a CX#2 or even extension state of another instance of CX#1.
+Isolation supports composition invariance.
+
+In the (Soft CPU SIG) basis spec, a custom extension was composable
+if-and-only-if it accessed the hart's current extension state or the
+integer register file (only). Here this criterion also supports floating
+point and vector registers, and memory, but still not PC, exceptions,
+standard CSRs, etc. Accesses to integer, floating point, and vector
+registers are composable (across separate CX libraries) because RISC-V
+already defines an ABI and calling convention for disciplined sharing
+of these single-instance-per-hart resources across libraries (across
+function calls).
+
+Supporting CX instruction access to memory are more fraught. Observe
+that pure software libraries that allocate memory and keep such
+allocations private and mutually isolated, are composable, whereas
+libraries that allocate _and share_ memory may break when combined into
+the same application.
+
+Since there is precedent and demand for CX instructions that access
+memory, and since supporting them as _composable_ will not make "pure
+software library shared memory composition" any worse, they are supported.
+
+The proviso that the memory accesses are _as if_ performed by the local
+hart, is a simple way to provide a basic, dependable, and portable memory
+model for CX instructions.
+
+RE: _exceptions_, this will probably require more work, more constraints
+on permissible exceptions functional behavior.
+
+[start=3]
+3. _Instructions that access memory appear to execute in program order
+on the local hart. These instructions follow RVWMO at the instruction
+level. If the Ztso extension is implemented, these instructions
+additionally follow RVTSO at the instruction level._
+
+This criterion follows the unpriv specification of vector memory access
+instructions, and reflects a strategy to slavishly reuse the vector memory
+model for CX instructions.
+
+So, following vector memory access instructions' lead, _at least_ the
+criteria should support memory access instructions that issue zero or
+more loads, or zero or more stores. Perhaps they should allow any ordering
+of all the accesses that occur from one instruction. Perhaps they should
+a allow specific constrained ordering of the accesses. Perhaps too they
+should be able to issue any number of loads and stores. Perhaps not. _TBD._
+
+There is also precedent, and demand, for other more _DMA-like_ memory
+models for custom instructions, supporting block memory transfers
+that are not necessarily ordered with respect to the hart's ordinary
+loads and stores, or that incur fences, or that may use a different virtual
+memory address map, but these _less constrained_ models do not provide a clear
+path to dependable composition and portability of CX libraries across
+implementations, and so are not supported in the criteria.
+
+[start=4]
+4. _Instructions that access memory may raise the usual memory access
+exceptions._
+
+This follows from supporting CXs that access memory.
+
+[start=5]
+5. _The extension is specified so that any implementation of the extension
+exhibits identical functional behavior._
+
+This criterion aims to require _portability_ of any composable
+custom extension, supporting reuse of CX libraries across different
+implementations of a composable custom extension. It may be too strong --
+for example, it denies _composability_ of a true random number generator
+extension -- this would entail a different definition of _functional
+behavior_.
+
+[start=6]
+6. _A composable custom extension may have extension state. An
+implementation of the extension may support zero, one, more state
+instances per hart._
+
+The second sentence "A implementation ..." has nothing to do with
+composability criteria of extensions (abstract contracts) per se, but
+is included to remind the reader that a hart may over time be able to
+select and issue CX instructions to more than one instance of a given CX.
+
+==== Examples
+
+Which of the following custom extensions' custom instructions pass these criteria?
+
+1. `dotprod rd,rs1,rs2`: `X[rd] = state.accum += X[rs1] * X[rs2];` Composable.
+
+2. `dotprod2 rd,rs1,rs2`: `X[rd] = state.accum += X[rs1] * X[rs2] + X[rs1+1] * X[rs2+1];` Composable.
+
+3. `hash16 rd`: `X[rd] = hash(x16,x17,...,x31);` Composable.
+
+4. `hash4KB rd,disp(rs1)`: `X[rd] = hash_mem(disp(rs1), 4096);`
+Composable. In practice, dependably composable if the 4KB buffer is not shared-writeable
+with other custom extensions.
+
+5. `reg2 rs1,rs2`: `state.(a,b) = (X[rs1], X[rs2]);` `;;` `func4 rd,rs1,rs2`: `X[rd] = func4(state.a, state.b, X[rs1], X[rs2]);`
+Composable. (The two custom instructions `reg2` and `func4` are each composable.)
+
+6. `sort rs1,rs2`: `sort [(key,value)]` (array of `X[rs2]` XLEN-bit pairs in memory at `X[rs1]`).
+Composable. In practice, dependably composable if the array in memory is not shared
+with other CXs.
+
+7. `begin_async rs1` : `state.FSM.start(X[rs1]);` `;; ... ;;` `end_async rd,rs1,rs2` : `X[rd] = f(X[rs1], X[rs2], state.FSM);`
+Composable. The pair of instructions begins and later completes a
+computation upon the extensions' state.  The computation proceeds
+continuously during the interval, but is only _observable_ as updates
+to extension state manifest during `end_async`.
+
+8. `watch rs1,rs2`: trap whenever `X[rs1] == X[rs2]`.
+Not composable. Its behavior extends beyond the execution of the instruction.
+
+9. `stream-register rs1,rs2`: PULP-like stream semantic registers: stream `mem[rs1]`, `mem[rs1+4]`, etc. through `X[rs2]`.
+Not composable.  Its behavior extends beyond the execution of the instruction.
+
+10. `loop rs1,imm`: repeat next `imm` instructions, `X[rs1]` times.
+Not composable. PC access is not _composable state_. Also, `loop` does not manifest one-instruction-at-a-time behavior.
+
