@@ -65,8 +65,8 @@ an exception or writes some composable state. _Composable state_
 comprises the selected extension's state, including its custom CSRs,
 plus the hart's integer registers, floating-point registers, `fcsr` CSR,
 vector registers, vector context status in `mstatus` and in `vsstatus`,
-`vtype`, `vl`, `vlenb`, `vstart`, `vcsr` CSRs, and loads and stores to
-memory as if performed by the local hart.
+`vtype`, `vl`, `vlenb`, `vstart`, `vcsr` CSRs, PC, and loads and stores
+to memory as if performed by the local hart.
 
 3. Instructions that access memory appear to execute in program order
 on the local hart. These instructions follow RVWMO at the instruction
