@@ -1,6 +1,9 @@
 [[criteria]]
 == Composability Criteria
 
+This section provides the criteria that the behavior of a composable
+custom extension must satisfy.
+
 [NOTE]
 ====
 The CX Composability Criteria comprise a set of rules that determine which
@@ -72,16 +75,47 @@ vector registers, vector context status in `mstatus` and in `vsstatus`,
 `vtype`, `vl`, `vlenb`, `vstart`, `vcsr` CSRs, PC, and loads and stores
 to memory as if performed by the local hart.
 
+[NOTE]
+====
+Accessing privileged state (e.g., in `mstatus`) may be problematic and
+worth considering disallowing.
+====
+
+[NOTE]
+====
+Behavior of "selected extensions's state" will need more specification
+with respect to non-idempotence, ordering (if necessary), and access
+by other extensions (if allowed).
+====
+
+[start=3]
 . Instructions that access memory appear to execute in program order
 on the local hart. These instructions follow RVWMO at the instruction
 level. If the Ztso extension is implemented, these instructions
 additionally follow RVTSO at the instruction level.
 
+[NOTE]
+====
+This criteria will need to include much more specific language
+regarding memory behavior with respect to ordering, partial
+completion, exceptions, and various memory types as specified in PMAs
+(in particular, non-idempotent memory regions).
+====
+
+[start=4]
 . Instructions that access memory may raise the usual memory access
 exceptions.
 
 . The extension is specified so that any implementation of the extension
 exhibits _identical_ functional behavior.
+
+[NOTE]
+====
+Identical may be too strong a requirement and it may be more
+appropriate to say that the functional behavior satisfies the
+extension specification, which itself may be an unnecessary
+requirement.
+====
 
 ==== Extension state
 
