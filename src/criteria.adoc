@@ -1,8 +1,8 @@
 [[criteria]]
 == Composability Criteria
 
-=== Introduction (non-normative)
-
+[NOTE]
+====
 The CX Composability Criteria comprise a set of rules that determine which
 RISC-V custom extensions are deemed _composable_, forming a subcategory
 of custom extensions known as _composable custom extensions_.
@@ -20,8 +20,11 @@ unchanged in the presence or absence of other CXs.
 . _Portability_: the functional behavior of a system of harts and CXs,
 including this CX, is the same regardless of what hardware implements
 them.
+====
 
-=== Requirements (non-normative) (temporary, will be deleted)
+[NOTE]
+====
+Requirements (temporary, will be deleted):
 
 . Support composition invariance so that the functional behavior of a
 CX does not change in the presence/absence of other CXs.
@@ -33,11 +36,12 @@ change across different hardware implementations of the hart or the CX.
 
 . Support CXs that access integer registers.
 
-==== Potential requirements
+Potential requirements:
 
 [start=5]
 . Support CXs that access floating-point registers, vector registers,
 and shared memory.
+====
 
 === Definitions
 (Edit: eventually move definitions to a definitions section.)
@@ -86,9 +90,10 @@ exhibits _identical_ functional behavior.
 implementation of the extension may support zero, one, more state
 instances per hart.
 
-=== Discussion (non-normative)
+[NOTE]
+====
 
-==== "Bottom up" criteria
+*"Bottom up" criteria*
 
 There is a boundless multiverse of possible custom extensions, simple,
 complex, and bizarre. But which custom extensions are, by design,
@@ -109,7 +114,7 @@ not break composition. Although this may preclude finding certain useful
 custom extensions _composable_, at least those are that composable will
 compose gracefully.
 
-==== Why these criteria?
+*Why these criteria?*
 
 . _Its instructions appear to execute, one-at-a-time, in program order
 on the local hart._
@@ -220,8 +225,12 @@ The second sentence "A implementation ..." has nothing to do with
 composability criteria of extensions (abstract contracts) per se, but
 is included to remind the reader that a hart may over time be able to
 select and issue CX instructions to more than one instance of a given CX.
+====
 
-==== Examples
+[NOTE]
+====
+
+*Examples*
 
 Which of the following custom extensions' custom instructions pass these criteria?
 
@@ -256,3 +265,5 @@ Not composable.  Its behavior extends beyond the execution of the instruction.
 
 . `loop rs1,imm`: repeat next `imm` instructions, `X[rs1]` times.
 Not composable. PC access is not _composable state_. Also, `loop` does not manifest one-instruction-at-a-time behavior.
+
+====
