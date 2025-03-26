@@ -9,7 +9,33 @@ be removed from this document.  External specifications include both
 RISC-V and non-RISC-V specifications and other information
 specification mechanisms.
 
+=== Unified Discovery
+
+[NOTE]
+====
+This section will be incorporated into the RISC-V Unified Discovery
+Specification, as appropriate.
+====
+
+[TIP]
+====
+Add schema for identifying composable custom extension on harts and
+any necessary parameters, such as state size.
+
+If necessary add schema for identifying multiple CX instances and
+heterogeneous per-hart accessibility of these CX instances.
+====
+
 === Devicetree
+
+[TIP]
+====
+Add schema for attributes that identify composable custom extension on
+harts and any necessary parameters, such as state size.
+
+If necessary add schema for identifying multiple CX instances and
+heterogeneous per-hart accessibility of these CX instances.
+====
 
 === ACPI
 
@@ -17,6 +43,16 @@ specification mechanisms.
 ====
 This section will be incorporated into the ACPI Specification.
 ====
+
+[TIP]
+====
+Add definition for ACPI table for identifying composable custom
+extension on harts and any necessary parameters, such as state size.
+
+If necessary add support for identifying multiple CX instances and
+heterogeneous per-hart accessibility of these CX instances.
+====
+
 
 === User Space ABI
 
@@ -27,9 +63,41 @@ This section will be incorporated into the RISC-V psABI Specification.
 
 ==== Composable Custom Extension Aware Calling Convention
 
+[TIP]
+====
+Define a calling convention for handling composable custom extension
+framework state on calls between object files that both support this
+convention.
+
+Define criteria for use by composable custom extension authors in
+defining extension specific calling conventions that support similar
+behavior.
+====
+
 ==== Legacy Interoperability Calling Convention
 
+[TIP]
+====
+Define calling conventions for handling composable custom extension
+framework state on calls between object files that support composable
+custom extensions (as defined in spec-abi-cx) and those that do not.
+
+Define criteria for use by composable custom extension authors in
+defining extension specific calling conventions that support similar
+behavior.
+====
+
 === User Space API
+
+[TIP]
+====
+Specify an API that provides a uniform CX programming model including
+CX naming, discovery, versioning, CX selection, and error handling and
+correct composition of CX libraries.
+
+If necessary the API will support both the singleton CX model and the
+multiple CX instance model.
+====
 
 === SBI
 
@@ -38,4 +106,20 @@ This section will be incorporated into the RISC-V psABI Specification.
 This section will be incorporated into the RISC-V SBI Specification.
 ====
 
+[TIP]
+====
+It is unclear if an SBI extension is necessary.  It will be specified
+as needed.
+====
+
 === Linux
+
+[TIP]
+====
+Add interfaces to `hwprobe`, `prctl`, and `sysfs` to provide discovery of
+composable custom extensions and related parameters and control of
+extension enablement.
+
+If necessary add additional interfaces or syscalls to support a multiple
+CX instance model.
+====

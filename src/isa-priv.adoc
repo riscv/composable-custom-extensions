@@ -1,2 +1,12 @@
 [[isa-priv]]
 == Privileged Opcode and State Multiplexing
+
+[TIP]
+====
+Specify an ISA extension for more privileged code to grant access to a
+CX to less privileged code, and to enable privileged code to trap and
+emulate CX instructions/CSRs.
+
+If necessary the ISA extension also supports access control to
+multiple CX instances of the same CX.
+====

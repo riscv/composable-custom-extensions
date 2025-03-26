@@ -1,2 +1,8 @@
 [[li]]
 == Logic Interface
+
+[TIP]
+====
+Specify a logic signal level interface for composable custom
+extensions.
+====

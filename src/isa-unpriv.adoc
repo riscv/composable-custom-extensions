@@ -1,2 +1,15 @@
 [[isa-unpriv]]
 == Unprivileged Opcode and State Multiplexing
+
+[TIP]
+====
+Specify an ISA extension to select the current CX to perform custom
+instructions/CSRs, and to indicate multiplexing status/errors.
+
+If necessary the ISA extension supports selection of one of possibly
+multiple CX instances of the same CX.
+
+If necessary the ISA extension also supports selection of a current CX
+(or CX instance) for each of multiple subranges of custom
+instructions/CSRs.
+====

@@ -1,2 +1,8 @@
 [[isa-state]]
 == Privileged State Management
+
+[TIP]
+====
+Specify an ISA extension to uniformly initialize, save, and restore
+any CX state context.
+====
