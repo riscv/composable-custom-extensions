@@ -50,4 +50,5 @@ Key aspects of this programming model include:
   extension, if any, for each request to enable the extension.
 
 * The state provided by a composable custom extension is treated as
-  unique and separate from other hart state.
+  unique and separate from other hart state, such as integer or
+  floating point registers.
