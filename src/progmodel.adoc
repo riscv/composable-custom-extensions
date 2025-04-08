@@ -29,7 +29,7 @@ positions are included here.
 
 === Single Hart State Context
 
-Key aspects of this programming model include:
+Distinguishing features of this programming model include:
 
 * When enabled, a particular composable custom extension provides a
   given software thread exactly one instance of composable custom
@@ -43,7 +43,7 @@ Key aspects of this programming model include:
 
 === Multiple Non-Hart State Contexts
 
-Key aspects of this programming model include:
+Distinguishing features of this programming model include:
 
 * A particular composable custom extension provides a given software
   thread an independent and isolated copy of the state provided by the
