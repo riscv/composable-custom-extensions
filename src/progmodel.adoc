@@ -1,0 +1,53 @@
+[[progmodel]]
+[appendix]
+= Programming Model
+
+This section provides a general description of the user space
+programming model(s) offered by Composable Custom Extensions.
+
+[IMPORTANT]
+====
+This entire section is non-normative.
+====
+
+[TIP]
+====
+The programming models here are presented as a way to evaluate the
+suitability of decisions in other areas of the specification.
+
+It is yet to be determined which programming models will be supported
+by the specifications, which may or may not include any or all of the
+models described here.
+====
+
+[TIP]
+====
+Of the four possible combinations of one/multiple state contexts and
+include/exclude state from hart state, the two commonly advocated for
+positions are included here.
+====
+
+=== Single Hart State Context
+
+Key aspects of this programming model include:
+
+* When enabled, a particular composable custom extension provides a
+  given software thread exactly one instance of composable custom
+  extension state, if any.
+
+* The state provided by a composable custom extension, if any, is
+  treated similar to other hart state, such as integer or floating
+  point registers.  Composable custom extension state is included in
+  `ucontext_t` and handled appropriately by `makecontex` et al, and by
+  `setjmp` et al.
+
+=== Multiple Non-Hart State Contexts
+
+Key aspects of this programming model include:
+
+* A particular composable custom extension provides a given software
+  thread an independent and isolated copy of the state provided by the
+  extension, if any, for each request to enable the extension.
+
+* The state provided by a composable custom extension is treated as
+  unique and separate from other hart state.

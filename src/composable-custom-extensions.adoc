@@ -71,6 +71,7 @@ include::li.adoc[]
 
 include::external.adoc[]
 include::guidance.adoc[]
+include::progmodel.adoc[]
 
 // The index must precede the bibliography
 include::index.adoc[]
