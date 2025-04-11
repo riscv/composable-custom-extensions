@@ -1,9 +1,9 @@
-[[progmodel]]
+[[unprivarch]]
 [appendix]
-= Programming Model
+= Unprivileged Architecture Models
 
-This section provides a general description of the user space
-programming model(s) offered by Composable Custom Extensions.
+This section provides a general description of the unprivileged
+architecture model(s) offered by Composable Custom Extensions.
 
 [IMPORTANT]
 ====
@@ -12,12 +12,12 @@ This entire section is non-normative.
 
 [TIP]
 ====
-The programming models here are presented as a way to evaluate the
+The architecture models here are presented as a way to evaluate the
 suitability of decisions in other areas of the specification.
 
-It is yet to be determined which programming models will be supported
-by the specifications, which may or may not include any or all of the
-models described here.
+It is yet to be determined which models will be supported by the
+specifications, which may or may not include any or all of the models
+described here.
 ====
 
 [TIP]
@@ -29,7 +29,7 @@ positions are included here.
 
 === Single Hart State Context
 
-Distinguishing features of this programming model include:
+Distinguishing features of this architecture include:
 
 * When enabled, a particular composable custom extension provides a
   given software thread exactly one instance of composable custom
@@ -43,7 +43,7 @@ Distinguishing features of this programming model include:
 
 === Multiple Non-Hart State Contexts
 
-Distinguishing features of this programming model include:
+Distinguishing features of this architecture include:
 
 * A particular composable custom extension provides a given software
   thread an independent and isolated copy of the state provided by the
