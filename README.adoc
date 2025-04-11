@@ -42,7 +42,7 @@ To build the document, you'll need the following tools installed on your system:
 === Cloning the Repository
 
 ```shell
-git clone --recurse-submodules https://github.com/riscv/composable-extensions.git
+git clone --recurse-submodules https://github.com/riscv/composable-custom-extensions.git
 ```
 
 === Building the Documentation
@@ -50,7 +50,7 @@ git clone --recurse-submodules https://github.com/riscv/composable-extensions.gi
 To start the build process, run:
 
 ```shell
-cd ./composable-extensions && make build
+cd ./composable-custom-extensions && make build
 ```
 
 The link:Makefile[] script will check the availability of Docker on your system:
