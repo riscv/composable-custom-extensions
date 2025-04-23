@@ -116,19 +116,46 @@ is not implemented will raise an illegal instruction exception.
 [NOTE]
 ====
 The basis spec provides a `cx_status` CSR to indicate CX multiplexing
-errors including invalid CX, invalid state, CX off, invalid function
-(i.e., unimplemented custom instruction), custom instruction error,
-stateful custom instruction error.
+errors including invalid version, invalid CX, invalid state, CX off,
+invalid function (i.e., unimplemented custom instruction), custom
+instruction error, stateful custom instruction error.
 
 This is not adopted here. The errors { invalid CX, invalid state, CX
 off } reflect goings-on in the CX execution environment and should not
 be the concern of the unpriv programming model. The invalid function /
 unimplemented custom instruction error is usually, and best, indicated
 with an illegal instruction exception, and we should not innovate here.
-With those out of the way, while there is debatable utility in supporting
-uniform means of signaling and retrieving stateless and stateful error
-information from CXs, it is inessential and thus omitted.
+There is debatable utility in supporting uniform means of signaling
+and retrieving stateless and stateful error information from CXs, so it
+is judged inessential and thus omitted.
+
+What remains is the _invalid version_ error. This was introduced out
+of a _longevity_ (forward and backward compatibility) requirement,
+recognizing that an enduring CX Framework must support interop of
+old and new software and hardware components across decades: _"Set
+by a CSR-write to mcx_selector, or by a custom operation instruction,
+when mcx_selector.version is invalid. (For example, when new software
+writes a new selector type that old hardware does not implement.)"_
+While in the present spec there is no `mcx_selector`, perhaps `cxsel`
+CSR, the linchpin of CX multiplexing, should similarly anticipate future
+evolution of the CX Framework, and carry a small `type` or `version`
+ID field to reliably detect new software inadvertently writing a new
+selector format that old hardware does not implement. In which case,
+instead of setting an _invalid version_ error, it would simply raise an
+illegal instruction exception.
+
+Another use of `cx_status` CSR was as a fence, to await completion of
+previously issued custom operations: _"Updates to cx_status are precise,
+as if each custom operation instructions issues and completes prior to
+the next, even if under the hood custom operations instructions are
+pipelined or complete out-of-order."_ It is unclear if such a CX agnostic
+custom operation fence is still required, and if so what ISA support
+this merits.
 ====
+
+As usual, an attempt to access a custom CSR without appropriate privilege
+level raises an illegal instruction exception, and an attempt to write
+a read-only custom CSR register raises an illegal instruction exception.
 
 An attempt to execute a custom instruction or custom CSR access when
 the CX indicated by `cxsel` is not granted or is not present
@@ -141,3 +168,11 @@ control mechanism, this behavior supports all of: 1) emulation of absent
 CXs; 2) dynamic / late revocation of access to a CX; 3) protection from
 forgery of CX selector values.
 ====
+
+==== Precise exceptions
+CX custom operations preserve precise exception semantics. If an
+instruction preceding a custom operation traps, the custom operation does
+not execute, and has no effect upon the specified architectural state,
+including the selected CX state. If an instruction following a custom
+operation traps, the custom operation nevertheless executes, updating
+the specified architectural state.
