@@ -55,10 +55,15 @@ A _custom extension_ is an abstract instruction set _contract_, comprising
 a set of custom instructions plus a set of RISC-V custom CSRs plus
 extension state, all with a specified _functional behavior_ and state model.
 
+A _custom operation_ is a custom instruction or a custom CSR access.
+
 _Functional behavior_ is the set of emergent observable side-effects
 (observable by standard RISC-V instructions) that must occur upon
-executing the specified custom instructions. Functional behavior does
+performing the specified custom operations. Functional behavior does
 not include timing-based behavior.
+
+A _composable custom extension (CX)_ is a custom extension that satisfies
+the Composability Criteria.
 
 === Criteria
 A custom extension is a _composable_ custom extension _if-and-only-if_:

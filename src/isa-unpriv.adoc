@@ -1,9 +1,33 @@
 [[isa-unpriv]]
-== Unprivileged Opcode and State Multiplexing
+:secnums:
+== Unprivileged CX Multiplexing
+
+The unprivileged Composable Custom Extensions Extension
+supports _CX multiplexing_ of the custom instruction and custom
+CSR spaces, so that multiple custom extensions (of arbitrary custom
+instructions and custom CSRs) can coexist conflict-free within a system.
+
+The extension supports a model in which software first _selects_ a hart's
+current CX prior to issuing its custom instuctions or accessing its
+custom CSRs. These custom operations are executed by the selected CX
+and ignored by other CXs.
+
+=== Requirements (non-normative)
+
+The unpriv extension should support:
+
+. A new CSR indicating the hart's currently selected CX, or "no CX" indicating no CX is selected.
+. A single instruction that selects the current CX.
+. When a CX is selected, custom operations are executed by that CX.
+. When no CX is selected, any built-in custom operations are executed.
+. An error indication or exception (TBD) when a bad CX selection occurs or when a custom operation is unimplemented by the selected CX.
+. Invisible Trap emulation of custom operations and entire CXs.
 
 [TIP]
 ====
-Specify an ISA extension to select the current CX to perform custom
+Earlier _CX TG requirements_:
+
+Specify an ISA extension to select the current CX to execute custom
 instructions/CSRs, and to indicate multiplexing status/errors.
 
 If necessary the ISA extension supports selection of one of possibly
@@ -12,4 +36,108 @@ multiple CX instances of the same CX.
 If necessary the ISA extension also supports selection of a current CX
 (or CX instance) for each of multiple subranges of custom
 instructions/CSRs.
+====
+
+=== CX Extension Programmer's Model
+
+The CX Extension adds one unprivileged CSR (`cxsel`) to a base RISC-V ISA.
+
+.New CX selection CSR
+[cols="2,2,2,2,10"]
+[%autowidth]
+|===
+| Address | Privilege | Name   | Width (bits) | Description
+
+| 0xTBD | URW | cxsel | XLEN | CX selection
+|===
+
+`cxsel` indicates the currently selected CX. It contains a _CX selector_
+value. A value of `0` indicates no CX is selected.
+
+[NOTE]
+====
+`cxsel` reflects the basis spec's `cx_index`, a URW CSR selecting and
+indicating the current CX. It is an opaque value and is scoped to a hart.
+
+`cxsel` supports selecting among different CXs and among different state instances of a CX.
+
+There is a proposal to support simultaneous selection of more than one
+CX on a hart, for example, one for each of `custom-0/1/2/3`. This would
+require multiple such CSRs, `cxsel0`, `cxsel1`, etc.
+====
+
+=== CX Selection
+
+CX software _discovers_ and _selects_ a specific CX prior to executing
+its CX custom operations.
+
+CX discovery provides a _CX selector_ value, indicating a specific CX
+instance granted to this hart.
+
+CX software selects a CX by writing its CX selector to `cxsel`.
+CX software deselects all CXs by writing `0` to `cxsel`.
+
+----
+ csrw cxsel,selector
+----
+
+[NOTE]
+====
+`csrrw` is a necessary and sufficient way to change `cxsel`.
+There is a proposal to introduce a new instruction, such as `cxselect`
+_selector_, to change `cxsel`, similar to how `vsetvl` changes `vl` and
+`vtype`.
+====
+
+[NOTE]
+====
+The means of granting access, by a hart, to a specific CX, by more
+privileged software, is (to be) specified in the privileged CX extension
+specification.
+====
+
+[NOTE]
+====
+To facilitate development and use of CX software on systems lacking the
+specific CX implementation, CX discovery may also provide a CX selector
+indicating a CX that is _not_ implemented on this system. Subsequent
+execution of custom operations will raise an illegal instruction exception
+enabling Invisible Trap emulation of the absent CX's custom operations.
+====
+
+=== CX Multiplexing
+
+When `cxsel` is not `0`, custom instructions and custom CSR accesses
+are executed using the selected CX (only).
+
+An attempt to execute a custom instruction or custom CSR access that
+is not implemented will raise an illegal instruction exception.
+
+[NOTE]
+====
+The basis spec provides a `cx_status` CSR to indicate CX multiplexing
+errors including invalid CX, invalid state, CX off, invalid function
+(i.e., unimplemented custom instruction), custom instruction error,
+stateful custom instruction error.
+
+This is not adopted here. The errors { invalid CX, invalid state, CX
+off } reflect goings-on in the CX execution environment and should not
+be the concern of the unpriv programming model. The invalid function /
+unimplemented custom instruction error is usually, and best, indicated
+with an illegal instruction exception, and we should not innovate here.
+With those out of the way, while there is debatable utility in supporting
+uniform means of signaling and retrieving stateless and stateful error
+information from CXs, it is inessential and thus omitted.
+====
+
+An attempt to execute a custom instruction or custom CSR access when
+the CX indicated by `cxsel` is not granted or is not present
+will raise an illegal instruction exception.
+
+[NOTE]
+====
+Together with the (work in progress) privileged extension CX access
+control mechanism, this behavior supports all of: 1) emulation of absent
+CXs; 2) dynamic / late revocation of access to a CX; 3) protection from
+forgery of CX selector values.
 ====
