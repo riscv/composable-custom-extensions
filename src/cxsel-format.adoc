@@ -18,5 +18,5 @@ NOTE: This diagram shows the layout for RV32 systems, whereas in general
 
 |        XLEN-1 | inv   | Invalid selector if set
 | XLEN-2:XLEN-4 | type  | Type of selector: 0: _off_; 1: _v1_; other: _reserved_
-| XLEN-5:     0 | sel   | Type-specific selector value       
+| XLEN-5:     0 | sel   | Type-specific selector value
 |===
