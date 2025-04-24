@@ -1,0 +1,22 @@
+[wavedrom,,svg]
+....
+{reg: [
+  {bits: 28, name: 'sel'},
+  {bits: 3, name: 'type'},
+  {bits: 1, name: 'inv'},
+]}
+....
+
+NOTE: This diagram shows the layout for RV32 systems, whereas in general
+`inv` and `type` are bits XLEN-1 and XLEN-2:XLEN-4 respectively.
+
+.`cxsel` register layout
+[cols=">2,4,10"]
+[%autowidth,float="center",align="center",options="header"]
+|===
+|          Bits | Name  | Description
+
+|        XLEN-1 | inv   | Invalid selector if set
+| XLEN-2:XLEN-4 | type  | Type of selector: 0: _off_; 1: _v1_; other: _reserved_
+| XLEN-5:     0 | sel   | Type-specific selector value       
+|===
