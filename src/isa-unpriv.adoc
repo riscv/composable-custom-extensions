@@ -18,13 +18,13 @@ ignored by others.
 The CX Extension adds one unprivileged CSR (`cxsel`) and one unprivileged
 instruction (`cxsetsel`) to a base RISC-V ISA.
 
-.New CX selector CSR
+.New CX selection CSR
 [cols="2,2,2,2,10"]
 [%autowidth]
 |===
 | Address | Privilege | Name   | Width (bits) | Description
 
-| 0xTBD | URO | cxsel | XLEN | CX selector
+| 0xTBD | URO | cxsel | XLEN | CX selection
 |===
 
 `cxsel` indicates the currently selected CX. It is _WARL_ and contains
@@ -32,8 +32,8 @@ a legal _CX selector_ value.
 
 === CX Selectors
 
-A _CX selector_ is an `XLEN`-bit value.
-Legal selector values are _instance_, _builtin_, or _null_.
+A _CX selector value_ is an `XLEN`-bit value.
+Legal selector value _types_ are _instance_, _builtin_, or _null_.
 An _instance_ selector designates a specific CX instance granted to this hart.
 A _builtin_ selector designates the hart's built-in custom extensions.
 The selector value of `0` is a reserved _builtin_ selector.
@@ -56,7 +56,7 @@ one CX on a hart, for example, one for each of `custom-0/1/2/3`. This may
 require multiple such CSRs, `cxsel0`, `cxsel1`, etc., and/or changes to
 `cxsetsel`.
 
-NOTE: TODO: specify any _univeral_ CX selector invariants.  For example,
+NOTE: TODO: specify any _universal_ CX selector invariants.  For example,
 does this litmus test always hold: _are legal CX selector preserved when
 writing and reading back `cxsel`_?:
 
