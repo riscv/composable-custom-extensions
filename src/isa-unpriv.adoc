@@ -24,7 +24,7 @@ instruction (`cxsetsel`) to a base RISC-V ISA.
 |===
 | Address | Privilege | Name   | Width (bits) | Description
 
-| 0xTBD | URO | cxsel | XLEN | CX selection
+| 0xTBD | URO | cxsel | XLEN | CX selector
 |===
 
 `cxsel` indicates the currently selected CX. It is _WARL_ and contains
