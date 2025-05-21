@@ -32,12 +32,12 @@ a legal _CX selector_ value.
 
 === CX Selectors
 
-A _CX selector value_ is an `XLEN`-bit value.
-Legal selector value _types_ are _instance_, _builtin_, or _null_.
-An _instance_ selector designates a specific CX instance granted to this hart.
-A _builtin_ selector designates the hart's built-in custom extensions.
-The selector value of `0` is a reserved _builtin_ selector.
-A _null_ selector designates no custom extension.
+A CX selector _value_ is an `XLEN`-bit value. Some values are legal
+and some are illegal. The legal selector value _types_ are _instance_,
+_builtin_, or _null_. An _instance_ selector designates a specific CX
+instance granted to this hart. A _builtin_ selector designates the hart's
+built-in custom extensions. The selector value of `0` is a reserved
+_builtin_ selector. A _null_ selector designates no custom extension.
 
 NOTE: A CX selector may be _hart specific_.
 
@@ -47,9 +47,6 @@ TBD (but non-custom) 32-bit instruction `cxsetsel rd,rs1` atomically
 swaps values in the `cxsel` CSR and integer registers.  It writes the
 initial value of `x[rs1]` to `cxsel`, and if `rd` is not `x0` it writes
 the initial value of `cxsel` to `x[rd]`.
-
-When the initial value of `x[rs1]` is not a legal CX selector, `cxsetsel`
-writes a null selector into `cxsel`.
 
 NOTE: There is a proposal to support simultaneous selection of more than
 one CX on a hart, for example, one for each of `custom-0/1/2/3`. This may
@@ -77,8 +74,8 @@ the selected CX instance.
 When `cxsel` is a builtin selector, a CX instruction executes using the
 hart's built-in custom extensions.
 
-When `cxsel` is a null selector, a CX instruction raises an illegal
-instruction exception.
+When `cxsel` is a null selector, a CX instruction may raise an illegal
+instruction exception depending upon privilege mode.
 
 NOTE: An execution environment may implement an absent CX instruction
 via _invisible trap_ emulation.
