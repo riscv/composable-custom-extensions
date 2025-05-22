@@ -13,84 +13,81 @@ or accessing its custom CSRs (collectively _"CX instructions"_). These
 CX instructions are then executed by the selected custom extension and
 ignored by others.
 
+NOTE: There is a proposal to support simultaneous selection of more
+than one CX on a hart, for example, one for each of
+`custom-0/1/2/3`. This may require multiple selections CSRs, `cxsel0`,
+`cxsel1`, etc., and/or changes to `cxsetsel`.
+
 === CX Extension Programmer's Model
 
 The CX Extension adds one unprivileged CSR (`cxsel`) and one unprivileged
 instruction (`cxsetsel`) to a base RISC-V ISA.
 
-.New CX selection CSR
-[cols="2,2,2,2,10"]
+.New CX CSRs
+[cols="2,2,2,10"]
 [%autowidth]
 |===
-| Address | Privilege | Name   | Width (bits) | Description
+| Address | Privilege | Name   | Description
 
-| 0xTBD | URO | cxsel | XLEN | CX selector
+| 0xTBD | URO | cxsel | CX selector
 |===
 
-`cxsel` indicates the currently selected CX. It is _WARL_ and contains
-a legal _CX selector_ value.
+=== CX Selector Register (`cxsel`)
 
-=== CX Selectors
+`cxsel` is an XLEN-bit read-only register. It is a WARL register that
+must be able to hold all valid selector values.  It need not be
+capable of holding all possible invalid selector values.  Prior to
+writing `cxsel`, implementations may convert an invalid value into
+some other invalid value that `cxsel` is capable of holding.
 
-A CX selector _value_ is an `XLEN`-bit value. Some values are legal
-and some are illegal. The legal selector value _types_ are _instance_,
-_builtin_, or _null_. An _instance_ selector designates a specific CX
-instance granted to this hart. A _builtin_ selector designates the hart's
-built-in custom extensions. The selector value of `0` is a reserved
-_builtin_ selector. A _null_ selector designates no custom extension.
+NOTE: Invalid selector values may also be referred to as null selectors.
+
+Valid selector values are 0, which indicates the built-in custom
+extension, and any value returned by the platform specific discovery
+mechanism for use as a selector.
+
+A value of all 1s is an invalid selector value.
+
+[NOTE]
+====
+The all 1s value may be used by software to aid in debugging
+uninitialized variables.
+
+It is not required that the all 1s value be a legal value.
+====
+
+NOTE: There is a proposal to define an additional selector value to
+indicate 'no CX'.
 
 NOTE: A CX selector may be _hart specific_.
 
-=== CX Set Selector Instruction
+The value of `cxsel` is 0 at reset.
+
+NOTE: This will select the built-in custom extension on reset to
+provide compatibilty with software that does not support composable
+custom extensions.
+
+=== CX Set Selector Instruction (`cxsetsel`)
 
 TBD (but non-custom) 32-bit instruction `cxsetsel rd,rs1` atomically
-swaps values in the `cxsel` CSR and integer registers.  It writes the
-initial value of `x[rs1]` to `cxsel`, and if `rd` is not `x0` it writes
-the initial value of `cxsel` to `x[rd]`.
-
-NOTE: There is a proposal to support simultaneous selection of more than
-one CX on a hart, for example, one for each of `custom-0/1/2/3`. This may
-require multiple such CSRs, `cxsel0`, `cxsel1`, etc., and/or changes to
-`cxsetsel`.
-
-NOTE: TODO: specify any _universal_ CX selector invariants.  For example,
-does this litmus test always hold: _are legal CX selector preserved when
-writing and reading back `cxsel`_?:
-
-----
- cxsetsel rs1  ;; assume x[rs1] is a legal CX selector value
- csrr rd,cxsel ;; x[rd] == x[rs1] ??
-----
+swaps the value in `cxsel` and an integer register.  It writes the
+initial value of `x[rs1]` to `cxsel`, and if `rd` is not `x0` it
+writes the initial value of `cxsel` to `x[rd]`.
 
 === CX Multiplexing
 
 The CX selector value in `cxsel` determines which specific CX instance
-granted to this hart, or the built-in custom extensions, executes CX
+granted to this hart, or the built-in custom extensions, executes
+CX instructions.
+
+When `cxsel` is 0, CX instructions are executed by the built-in custom
+extension.
+
+When `cxsel` is any other valid value, CX instructions are executed by
+the selected extension.
+
+When `cxsel` is invalid, CX instructions are treated as illegal
 instructions.
 
-When `cxsel` is an instance selector, a CX instruction executes using
-the selected CX instance.
-
-When `cxsel` is a builtin selector, a CX instruction executes using the
-hart's built-in custom extensions.
-
-When `cxsel` is a null selector, a CX instruction may raise an illegal
-instruction exception depending upon privilege mode.
-
-NOTE: An execution environment may implement an absent CX instruction
-via _invisible trap_ emulation.
-
-=== Example of CX Multiplexing (non-normative)
-
-----
- // cx_sel_t sel_A = cx_discover(CX_A_UUID, ...);
- // cx_sel_t sel_B = cx_discover(CX_B_UUID, ...);
- if (!cx_instance(sel_A) || !cx_instance(sel_B)) ...
-
- cxsetsel sel_A
- custom-0.func rd,rs1,rs2,...	// d = CX_A::af(s1, s2, ...);
- ...
- cxsetsel sel_B
- custom-0.func rd,rs1,rs2,...	// d = CX_B::bf(s1, s2, ...);
- ...
-----
+NOTE: There is a proposal to require that CX instructions trap when
+`cxsel` is invalid.
