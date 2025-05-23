@@ -23,6 +23,9 @@ than one CX on a hart, for example, one for each of
 The CX Extension adds one unprivileged CSR (`cxsel`) and one unprivileged
 instruction (`cxsetsel`) to a base RISC-V ISA.
 
+NOTE: There is a proposal to exclusively use Zicsr instructions or new
+instruction(s), but not a combination of both, to access `cxsel`.
+
 .New CX CSRs
 [cols="2,2,2,10"]
 [%autowidth]
@@ -34,11 +37,15 @@ instruction (`cxsetsel`) to a base RISC-V ISA.
 
 === CX Selector Register (`cxsel`)
 
-`cxsel` is an XLEN-bit read-only register. It is a WARL register that
-must be able to hold all valid selector values.  It need not be
-capable of holding all possible invalid selector values.  Prior to
-writing `cxsel`, implementations may convert an invalid value into
-some other invalid value that `cxsel` is capable of holding.
+The read-only XLEN-wide CX selector CSR, `cxsel` specifies the
+extension used to execute CX instructions, and can only be updated by
+the `cxsetsel` instruction.
+
+`cxsel` is a WARL register that must be able to hold all valid
+selector values.  It need not be capable of holding all possible
+invalid selector values.  Prior to writing `cxsel`, implementations
+may convert an invalid value into some other invalid value that
+`cxsel` is capable of holding.
 
 NOTE: Invalid selector values may also be referred to as null selectors.
 
