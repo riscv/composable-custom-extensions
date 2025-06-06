@@ -47,8 +47,6 @@ invalid selector values.  Prior to writing `cxsel`, implementations
 may convert an invalid value into some other invalid value that
 `cxsel` is capable of holding.
 
-NOTE: Invalid selector values may also be referred to as null selectors.
-
 Valid selector values are 0, which indicates the built-in custom
 extension, and any value returned by the platform specific discovery
 mechanism for use as a selector.
@@ -62,9 +60,6 @@ uninitialized variables.
 
 It is not required that the all 1s value be a legal value.
 ====
-
-NOTE: There is a proposal to define an additional selector value to
-indicate 'no CX'.
 
 NOTE: A CX selector may be _hart specific_.
 
@@ -95,6 +90,3 @@ the selected extension.
 
 When `cxsel` is invalid, CX instructions are treated as illegal
 instructions.
-
-NOTE: There is a proposal to require that CX instructions trap when
-`cxsel` is invalid.
