@@ -39,9 +39,9 @@ it always selects a CX prior to issuing its custom instructions.
 Language and compiler support is optional: it must be possible to use a CX
 and its CX libraries without changing the compiler / compilation system.
 
-Similarly the CX programming model that the CX API promotes must make it possible
-to add a new CX and its libraries to a system without having to change
-the operating system / kernel / RTOS.
+Similarly the CX programming model that the CX API promotes must make
+it possible to add a new CX and its libraries to a system without having
+to change the operating system / kernel / RTOS.
 
 The CX API must support modern programming models including threads,
 task parallel, async/await, and coroutine models.
@@ -76,10 +76,10 @@ access only the pre-existing hart state.
 state per hart. Its custom instructions may access this state and their
 behavior may depend upon it. It has a specific _sharing model_, uniformly
 employed by its various (independenly authored) CX libraries, specifying
-the discipline used by all (independently authored) CX libraries to
-dependably share the one instance of the CX state among them. For example,
-a CX's sharing model might be caller-save, callee-save, always-initialize,
-or even something finer grained that is specific to that CX's state.
+the discipline used by all such CX libraries to dependably share the one
+instance of the CX state among them. For example, a CX's sharing model
+might be caller-save, callee-save, always-initialize, or even something
+finer grained that is specific to that CX's state.
 
 3. An _exclusive state_ CX assumes there may be zero or more instances of
 CX state per hart. Its custom instructions may access the one currently
@@ -119,23 +119,23 @@ void cx_restore(void* pv, size_t size);
 ==== Types
 
 `uuid_t` is a 128b _Universally Unique ID_ (RFC 9562). CX libraries
-(esp. CX library binaries) employ CX UUIDs to canonically and stably identify
-CXs across time and space.
+(esp. CX library binaries) employ CX UUIDs to canonically and stably
+identify CXs across time and space.
 
-A CX UUID is the unique and canonical name of a given CX (i.e. _immutable
-CX Contract_) which completely specifies the custom instructions and
-CSRs, state model, and behavior of a given composable custom extension.
-It is minted, in a decentralized fashion, once and for all, by the
-designer of the CX. If any facet of a CX is altered or extended, that
-is a different, new CX, requiring a new CX UUID. (Thus a CX library,
-written and tested to a given immutable CX, over the years will continue
-to observe the same behavior from that specific CX.)
+A CX UUID is the unique and canonical name of a given CX (i.e., _immutable
+CX contract_) which completely specifies the custom instructions and CSRs,
+state, and behavior of a given composable custom extension. It is minted,
+in a decentralized fashion, once and for all, by the designer of the
+CX. If any facet of a CX is altered or extended, that is a different,
+new CX, requiring a new CX UUID. (Thus a CX library, written and tested
+to a given immutable CX, over the years will continue to observe the
+same behavior from that specific CX.)
 
 `cx_sel_t` is the type of a _CX selector_ value. A CX selector for a
-given CX is obtained from `cx_open` and used (`cx_select`) to select
-the CX instance prior to issuing its custom instructions.
+given CX is obtained from `cx_open` and then used by `cx_select` to
+select the CX instance prior to issuing its custom instructions.
 
-`cx_open_flags` enumerates the `cx_open` flags`. `cx_open_shared`
+`cx_open_flags` enumerates the `cx_open` options. `cx_open_shared`
 indicates the specified CX should be opened _shared_; `cx_open_exclusive`
 indicates the specified CX should be opened _exclusive_.
 
@@ -145,13 +145,15 @@ indicates the specified CX should be opened _exclusive_.
 
 `cx_open` performs discovery and resource management of a CX instance. If
 the CX identified by `*puuid` is present, available, and granted per
-`cx_open_flags`, `cx_open` returns a valid CX selector value, otherwise
-`cx_sel_invalid`.
+`cx_open_flags`, the CX instance is acquired (referenced), and `cx_open`
+returns a valid CX selector value; otherwise `cx_sel_invalid`.
 
-The selector value may then be used, upon the same thread, to select the CX instance (`cx_select`) or to release the CX instance (`cx_close`).
+The selector value may then be used, upon the same thread, to select
+the CX instance (`cx_select`) or to release the CX instance (`cx_close`).
 
-Note, on a given thread, that multiple shared opens always obtain the same selector value, whereas
-multiple exclusive opens always obtain different selector values.
+Multiple _shared_ opens (on some thread) always obtain the same selector
+value, whereas multiple _exclusive_ opens always obtain different
+selector values.
 ```C++
 cx_sel_t sel_s0 = cx_open(&my_shared_state_cx_uuid, cx_open_shared);
 cx_sel_t sel_s1 = cx_open(&my_shared_state_cx_uuid, cx_open_shared);
@@ -162,7 +164,8 @@ cx_sel_t sel_x1 = cx_open(&your_exclusive_state_cx_uuid, cx_open_exclusive);
 assert(!(cx_sel_is_cx(sel_x0) && cx_sel_is_cx(sel_x1)) || sel_x0 != sel_x1);
 ```
 
-There is no guarantee, across successive open/close intervals, that reopening a given CX will succeed, or will obtain the same selector value:
+There is no guarantee, across successive open/close intervals, that
+reopening a given CX will succeed, or will obtain the same selector value:
 ```C++
 cx_sel_t sel_s0 = cx_open(&my_shared_state_cx_uuid, cx_open_shared);
 cx_sel_t sel_s1 = cx_open(&my_shared_state_cx_uuid, cx_open_shared);
@@ -181,30 +184,41 @@ are never shared across threads. So if thread 0 opens a shared CX
 instance, and thread 1 opens a shared CX instance, these instances are
 disjoint and isolated from each other. CX selector values are _scoped
 to the thread_ upon which they were obtained via `cx_open` and have no
-meaning upon other threads. Opening a CX instance on one thread does not
+meaning within other threads. Opening a CX instance on one thread does not
 open corresponding CX instances on other threads. Opening a CX instance
 on one thread does not ensure the CX may also opened on other threads.
 Two threads may open the same CX, whether shared or exclusive, and
 receive different selector values. Two threads may open different CXs,
 whether shared or exclusive, and receive identical selector values.
 
-_Initialization_. A freshly opened CX instance is _initialized_ per the specification of the specific CX. Revisit.
+_Initialization_. A CX instance, opened or reopened for the first time,
+is _initialized_ per the specification of the specific CX. (REVIEW)
+Note that a shared CX instance, opened for a second or subsequent time,
+might not be _initialized_.
 
 ===== cx_close
 
-`cx_close` releases one reference to a CX instance. In multithreaded
+`cx_close` releases one reference to a CX instance. The selector value
+becomes invalid.
+
+In multithreaded
 environments it must be invoked on the same thread as the corresponding
 `cx_open`. A CX instance that has been opened _shared_ `n` times on a
 thread must be closed `n` times.
 
+On "last close", the thread's CX instance and related resources are
+released.
+
 ===== cx_sel_is_cx
 
-`cx_sel_is_cx` returns `true` iff the CX selector value indicates a valid CX instance on this thread;
-an invalid, built-in, or stale (closed) selector returns `false`.
+`cx_sel_is_cx` returns `true` iff the CX selector value indicates a
+valid CX instance on this thread; an invalid, built-in, or stale (closed)
+selector returns `false`.
 
 ===== cx_select
 
-`cx_select` returns the thread's prior CX selection, and sets the thread's current CX selection to the CX selector value argument.
+`cx_select` returns the thread's prior CX selection, and sets the thread's
+current CX selection to the CX selector value argument.
 
 When the current CX selector indicates a valid CX instance, custom
 instructions and custom CSR accesses are performed by this CX instance;
@@ -217,7 +231,20 @@ signal an error condition.
 
 ===== cx_save
 
+`cx_save` with `pv == 0` returns the number of bytes necessary to save
+the CX instance state of the thread's currently selected CX instance.
+
+`cx_save` with `pv != 0` saves the CX instance state of the thread's
+currently selected CX instance, up to but not to exceed `size` bytes,
+at `*pv`.
+
 ===== cx_restore
+
+`cx_restore` with `pv == 0` does nothing.
+
+`cx_save` with `pv != 0` restores (reloads) the CX instance state of the
+thread's currently selected CX instance, from the copy saved at `*pv`
+with size `size` bytes.
 
 === Calling conventions
 
