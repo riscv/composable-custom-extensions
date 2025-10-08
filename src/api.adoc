@@ -1,6 +1,13 @@
 [[cx_api]]
 == CX API
 
+[WARNING]
+.This section is in the link:http://riscv.org/spec-state[Development state]
+====
+This section is actively being written and subsections and detail
+are changing daily. Please check back regularly for updates.
+====
+
 === Introduction (non-normative)
 
 This section specifies the CX API (application programming interface)
@@ -88,9 +95,34 @@ exclusive state CX library may rely upon its sole ownership of the CX
 instance, and therefore need not save/restore its state across
 invocations.
 
+==== CX state isolation models vs. thread context state
+
+A subtle and important consideration is whether a given CX instance
+is considered part of the _user_ thread context, such that it is
+automatically saved by the user C/C++ runtime library in `setjmp's
+jmp_buf` structure and in `makecontext's ucontext_t` structure.
+
+Is it useful to explicitly determine whether a given CX instance should
+be part of the user thread context? Consider the four cases.
+
+1. Shared state CX instance, included in user thread contexts:
+this follows current practice for RISC-V extensions.
+
+2. Shared state CX instance, not included in user thread contexts.
+
+3. Exclusive state CX instance, included in user thread contexts.
+
+4. Exclusive state CX instance, not included in user thread contexts.
+
+(TODO: study how Linux handles -V vector extension in kernel and glibc.)
+
 === CX API
 
 ==== API
+
+(TODO: Move this from pidgin C++ to standard C.)
+
+(TODO: Revise the entire API, below, for better error reporting.)
 
 ```C++
 #include <cstdint>
@@ -140,6 +172,8 @@ select the CX instance prior to issuing its custom instructions.
 `cx_open_flags` enumerates the `cx_open` options. `cx_open_shared`
 indicates the specified CX should be opened _shared_; `cx_open_exclusive`
 indicates the specified CX should be opened _exclusive_.
+
+(TODO: incorporate discussion of user thread context inclusion/exclusion.)
 
 ==== Functions
 
@@ -259,6 +293,8 @@ REVIEW: What happens if `!cx_sel_is_cx(cx_get_sel())`?
 
 === Calling conventions
 
+(TODO: Incorporate Darius' presentation of different calling convention attributes and behaviors.)
+
 ==== Managing the current CX selection
 
 ==== Exclusive CX library
@@ -350,5 +386,7 @@ int dotp_c(cx_sel_t cx_mac_sel, int as[], int bs[], unsigned n) {
 === Implementation considerations (non-normative)
 
 ==== Linux
+
+(TODO: detail how both shared and exclusive CX models live atop an OS that supports only one, or the other.)
 
 ==== System topology, virtual machines, dynamic hotplug, dynamic partial reconfiguration, revocation
