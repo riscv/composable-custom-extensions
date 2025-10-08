@@ -62,6 +62,7 @@ _Functional behavior_ is the set of emergent observable side-effects
 performing the specified custom operations. Functional behavior does
 not include timing-based behavior.
 
+[[cx-defn]]
 A _composable custom extension (CX)_ is a custom extension that satisfies
 the Composability Criteria.
 

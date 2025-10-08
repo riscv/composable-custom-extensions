@@ -1,0 +1,228 @@
+[[cx_api]]
+== CX API
+
+=== Introduction (non-normative)
+
+This section specifies the CX API (application programming interface)
+that _CX libraries_ use to discover, select, use, share, and manage
+composable custom extensions.
+
+The API provides common, uniform CX programming services, including CX
+naming, discovery, versioning, use, state models, error handling, and
+resource management.
+
+The CX API promotes a _CX programming model_ providing dependable
+composition of CX libraries, decentralized development, and stable CX
+library binaries, for modern software ecosystems and applications.
+
+==== Foundational assumptions
+
+The CX Framework supports independently authored and versioned CX
+libraries.
+
+CX libraries must support systems and hardware with and without any
+given CX.
+
+CX library _binaries_ are stable, meaning they need not be recompiled
+for different systems that implement different sets of CXs.
+
+CX libraries employ a dynamic discovery model, requesting access to one
+or more CXs, and coping when the requested CX is not available, perhaps by
+falling back to request a different CX or CX version, or by erroring out.
+
+A given CX library employs a coding pattern of _discover_, _select_,
+_use_. It first discovers (requests) a given CX. Then, if available,
+it always selects a CX prior to issuing its custom instructions.
+
+==== Other requirements and desiderata
+
+Language and compiler support is optional: it must be possible to use a CX
+and its CX libraries without changing the compiler / compilation system.
+
+Similarly the CX programming model that the CX API promotes must make it possible
+to add a new CX and its libraries to a system without having to change
+the operating system / kernel / RTOS.
+
+The CX API must support modern programming models including threads,
+task parallel, async/await, and coroutine models.
+
+The CX API must support arbitrary composition of CX libraries. Mutiple CX
+libraries may use the same CX, and CX libraries may nest calls to other
+CX libraries.
+
+The CX API must promote longevity across decades, anticipate and support
+forward compatibility, for arbitrary mixes of old and new CX libraries
+running on old and new processors, with old and new versions of given
+CXs. With long lived interop standards, and rich software ecosystems,
+there can be no "just recompile everything" do-over.
+
+The CX API should be as simple and minimalist as possible.
+
+The CX API and programming model should promote efficient programming
+idioms.
+
+To promote source code portability of _purely computational_ CX libraries,
+the CX API itself should not exhibit operating system dependencies.
+
+==== CX state models
+
+Different CXs will be designed to exhibit different state isolation models.
+The CX API supports at least three major categories of such models:
+
+1. A _stateless_ CX requires no additional state. CX custom instructions
+access only the pre-existing hart state.
+
+2. A _shared state_ CX assumes there may be zero or one instance of CX
+state per hart. Its custom instructions may access this state and their
+behavior may depend upon it. It has a specific _sharing model_, uniformly
+employed by its various (independenly authored) CX libraries, specifying
+the discipline used by all (independently authored) CX libraries to
+dependably share the one instance of the CX state among them. For example,
+a CX's sharing model might be caller-save, callee-save, always-initialize,
+or even something finer grained that is specific to that CX's state.
+
+3. An _exclusive state_ CX assumes there may be zero or more instances of
+CX state per hart. Its custom instructions may access the one currently
+selected instance state and their behavior may depend upon it. An
+exclusive state CX library may rely upon its sole ownership of the CX
+instance, and therefore need not save/restore its state across
+invocations.
+
+=== CX API
+
+==== API
+
+```C++
+#include <cstdint>
+
+struct uuid_t {
+    std::uint64_t high;
+    std::uint64_t low;
+};
+enum cx_sel_t {
+    cx_sel_invalid = -1,
+    cx_sel_builtin = 0,
+    cx_sel_first_cx = 1
+};
+enum cx_open_flags {
+    cx_open_shared      = 0,
+    cx_open_exclusive   = 1
+};
+cx_sel_t cx_open(const uuid_t* puuid, cx_open_flags flags);
+void cx_close(cx_sel_t sel);
+bool cx_sel_is_cx(cx_sel_t sel);
+cx_sel_t cx_select(cx_sel_t sel);
+size_t cx_save(void* pv, size_t size);
+void cx_restore(void* pv, size_t size);
+```
+
+==== Types
+
+`uuid_t` is a 128b _Universally Unique ID_ (RFC 9562). CX libraries
+(esp. CX library binaries) employ CX UUIDs to canonically and stably identify
+CXs across time and space.
+
+A CX UUID is the unique and canonical name of a given CX (i.e. _immutable
+CX Contract_) which completely specifies the custom instructions and
+CSRs, state model, and behavior of a given composable custom extension.
+It is minted, in a decentralized fashion, once and for all, by the
+designer of the CX. If any facet of a CX is altered or extended, that
+is a different, new CX, requiring a new CX UUID. (Thus a CX library,
+written and tested to a given immutable CX, over the years will continue
+to observe the same behavior from that specific CX.)
+
+`cx_sel_t` is the type of a _CX selector_ value. A CX selector for a
+given CX is obtained from `cx_open` and used (`cx_select`) to select
+the CX instance prior to issuing its custom instructions.
+
+`cx_open_flags` enumerates the `cx_open` flags`. `cx_open_shared`
+indicates the specified CX should be opened _shared_; `cx_open_exclusive`
+indicates the specified CX should be opened _exclusive_.
+
+==== Functions
+
+===== cx_open
+
+`cx_open` performs discovery and resource management of a CX instance. If
+the CX identified by `*puuid` is present, available, and granted per
+`cx_open_flags`, `cx_open` returns a valid CX selector value, otherwise
+`cx_sel_invalid`.
+
+The selector value may then be used, upon the same thread, to select the CX instance (`cx_select`) or to release the CX instance (`cx_close`).
+
+Note, on a given thread, that multiple shared opens always obtain the same selector value, whereas
+multiple exclusive opens always obtain different selector values.
+```C++
+cx_sel_t sel_s0 = cx_open(&my_shared_state_cx_uuid, cx_open_shared);
+cx_sel_t sel_s1 = cx_open(&my_shared_state_cx_uuid, cx_open_shared);
+assert(!(cx_sel_is_cx(sel_s0) && cx_sel_is_cx(sel_s1)) || sel_s0 == sel_s1);
+
+cx_sel_t sel_x0 = cx_open(&your_exclusive_state_cx_uuid, cx_open_exclusive);
+cx_sel_t sel_x1 = cx_open(&your_exclusive_state_cx_uuid, cx_open_exclusive);
+assert(!(cx_sel_is_cx(sel_x0) && cx_sel_is_cx(sel_x1)) || sel_x0 != sel_x1);
+```
+
+There is no guarantee, across successive open/close intervals, that reopening a given CX will succeed, or will obtain the same selector value:
+```C++
+cx_sel_t sel_s0 = cx_open(&my_shared_state_cx_uuid, cx_open_shared);
+cx_sel_t sel_s1 = cx_open(&my_shared_state_cx_uuid, cx_open_shared);
+assert(!(cx_sel_is_cx(sel_s0) && cx_sel_is_cx(sel_s1)) || sel_s0 == sel_s1);
+cx_close(sel_s0);
+// shared CX instance is still in use
+cx_close(sel_s1);
+// shared CX instance is no longer in use
+cx_sel_t sel_s2 = cx_open(&my_shared_state_cx_uuid, cx_open_shared);
+cannot_assert(cx_sel_is_cx(sel_S2)); // may fail
+cannot_assert(sel_s0 == sel_s2);     // may obtain a different selector value
+```
+
+In multhreading environments, CX instances, whether shared or exclusive,
+are never shared across threads. So if thread 0 opens a shared CX
+instance, and thread 1 opens a shared CX instance, these instances are
+disjoint and isolated from each other. CX selector values are _scoped
+to the thread_ upon which they were obtained via `cx_open` and have no
+meaning upon other threads. Opening a CX instance on one thread does not
+open corresponding CX instances on other threads. Opening a CX instance
+on one thread does not ensure the CX may also opened on other threads.
+Two threads may open the same CX, whether shared or exclusive, and
+receive different selector values. Two threads may open different CXs,
+whether shared or exclusive, and receive identical selector values.
+
+_Initialization_. A freshly opened CX instance is _initialized_ per the specification of the specific CX. Revisit.
+
+===== cx_close
+
+`cx_close` releases one reference to a CX instance. In multithreaded
+environments it must be invoked on the same thread as the corresponding
+`cx_open`. A CX instance that has been opened _shared_ `n` times on a
+thread must be closed `n` times.
+
+===== cx_sel_is_cx
+
+`cx_sel_is_cx` returns `true` iff the CX selector value indicates a valid CX instance on this thread;
+an invalid, built-in, or stale (closed) selector returns `false`.
+
+===== cx_select
+
+`cx_select` returns the thread's prior CX selection, and sets the thread's current CX selection to the CX selector value argument.
+
+When the current CX selector indicates a valid CX instance, custom
+instructions and custom CSR accesses are performed by this CX instance;
+when the selector is `cx_sel_builtin`, custom instructions and custom
+CSR accesses are performed using the specific processor's pre-existing
+built-in custom instructions; when the selector is invalid, including
+`cx_sel_invalid`, custom instructions and custom instructions have
+undefined behavior. In some environments, this behavior is defined to
+signal an error condition.
+
+===== cx_save
+
+===== cx_restore
+
+=== Calling conventions
+
+=== Implementation considerations (non-normative)
+
+==== Linux
+
+==== System topology, virtual machines, dynamic hotplug, dynamic partial reconfiguration, revocation

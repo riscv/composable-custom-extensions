@@ -67,6 +67,7 @@ include::isa-unpriv.adoc[]
 include::isa-state.adoc[]
 include::non-isa.adoc[]
 include::criteria.adoc[]
+include::api.adoc[]
 include::li.adoc[]
 
 include::external.adoc[]
