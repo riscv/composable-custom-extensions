@@ -64,7 +64,7 @@ idioms.
 To promote source code portability of _purely computational_ CX libraries,
 the CX API itself should not exhibit operating system dependencies.
 
-==== CX state models
+==== CX state isolation models
 
 Different CXs will be designed to exhibit different state isolation models.
 The CX API supports at least three major categories of such models:
@@ -96,24 +96,26 @@ invocations.
 #include <cstdint>
 
 struct uuid_t {
-    std::uint64_t high;
-    std::uint64_t low;
+    std::uint64_t   high;
+    std::uint64_t   low;
 };
 enum cx_sel_t {
-    cx_sel_invalid = -1,
-    cx_sel_builtin = 0,
+    cx_sel_invalid  = -1,
+    cx_sel_builtin  = 0,
     cx_sel_first_cx = 1
 };
 enum cx_open_flags {
     cx_open_shared      = 0,
     cx_open_exclusive   = 1
 };
+
 cx_sel_t cx_open(const uuid_t* puuid, cx_open_flags flags);
-void cx_close(cx_sel_t sel);
-bool cx_sel_is_cx(cx_sel_t sel);
+void     cx_close(cx_sel_t sel);
+bool     cx_sel_is_cx(cx_sel_t sel);
+cx_sel_t cx_get_sel(void);
 cx_sel_t cx_select(cx_sel_t sel);
-size_t cx_save(void* pv, size_t size);
-void cx_restore(void* pv, size_t size);
+size_t   cx_save(void* pv, size_t size);
+void     cx_restore(void* pv, size_t size);
 ```
 
 ==== Types
@@ -141,7 +143,7 @@ indicates the specified CX should be opened _exclusive_.
 
 ==== Functions
 
-===== cx_open
+===== cx_sel_t cx_open(const uuid_t* puuid, cx_open_flags flags);
 
 `cx_open` performs discovery and resource management of a CX instance. If
 the CX identified by `*puuid` is present, available, and granted per
@@ -196,7 +198,7 @@ is _initialized_ per the specification of the specific CX. (REVIEW)
 Note that a shared CX instance, opened for a second or subsequent time,
 might not be _initialized_.
 
-===== cx_close
+===== void cx_close(cx_sel_t sel);
 
 `cx_close` releases one reference to a CX instance. The selector value
 becomes invalid.
@@ -209,13 +211,18 @@ thread must be closed `n` times.
 On "last close", the thread's CX instance and related resources are
 released.
 
-===== cx_sel_is_cx
+===== cx_sel_t cx_get_sel(void);
+
+Return the thread's current CX selector value. Each new thread starts
+with a current CX selector value of `cx_sel_builtin`.
+
+===== bool cx_sel_is_cx(cx_sel_t sel);
 
 `cx_sel_is_cx` returns `true` iff the CX selector value indicates a
 valid CX instance on this thread; an invalid, built-in, or stale (closed)
 selector returns `false`.
 
-===== cx_select
+===== cx_sel_t cx_select(cx_sel_t sel);
 
 `cx_select` returns the thread's prior CX selection, and sets the thread's
 current CX selection to the CX selector value argument.
@@ -229,16 +236,18 @@ built-in custom instructions; when the selector is invalid, including
 undefined behavior. In some environments, this behavior is defined to
 signal an error condition.
 
-===== cx_save
+===== size_t cx_save(void* pv, size_t size);
 
 `cx_save` with `pv == 0` returns the number of bytes necessary to save
 the CX instance state of the thread's currently selected CX instance.
 
+REVIEW: What happens if `!cx_sel_is_cx(cx_get_sel())`?
+
 `cx_save` with `pv != 0` saves the CX instance state of the thread's
-currently selected CX instance, up to but not to exceed `size` bytes,
+currently selected CX instance, up to but not to exceeding `size` bytes,
 at `*pv`.
 
-===== cx_restore
+===== void cx_restore(void* pv, size_t size);
 
 `cx_restore` with `pv == 0` does nothing.
 
@@ -246,7 +255,97 @@ at `*pv`.
 thread's currently selected CX instance, from the copy saved at `*pv`
 with size `size` bytes.
 
+REVIEW: What happens if `!cx_sel_is_cx(cx_get_sel())`?
+
 === Calling conventions
+
+==== Managing the current CX selection
+
+==== Exclusive CX library
+
+==== Shared CX library
+
+=== CX library examples (non-normative)
+
+==== Exclusive CX library -- no CX save/restore
+
+```C++
+
+int func(int); // external, but cannot access our exclusive CX state
+
+int dotp_c(cx_sel_t cx_mac_sel, int as[], int bs[], unsigned n) {
+    if (cx_sel_is_cx(cx_mac_sel)) {
+        cx_sel_t prev = cx_select(cx_mac_sel);
+
+        int ret = cx_mac_reset();
+        for (int i = 0; i < n; ++i)
+            ret = cx_mac_mac(func(as[i]), bs[i]);
+
+        cx_select(prev); // or cx_select(cx_sel_builtin);
+        return ret;
+    }
+    else
+        return dotp_sw(as, bs, n);
+}
+```
+
+==== Shared CX library, callee save example
+```C++
+
+int func(int); // external, might access our shared CX state
+
+int dotp_c(cx_sel_t cx_mac_sel, int as[], int bs[], unsigned n) {
+    if (cx_sel_is_cx(cx_mac_sel)) {
+        cx_sel_t prev = cx_select(cx_mac_sel);
+
+		// save callee's CX state
+		size_t size = cx_save((void*)0, 0);
+		void* pv = alloca(size);
+		cx_save(pv, size);
+
+		// reset the state, perform the dot product
+        int ret = cx_mac_reset();
+        for (int i = 0; i < n; ++i)
+            ret = cx_mac_mac(func(as[i]), bs[i]);
+
+		// restore callee's CX state
+		cx_restore(pv, size);
+
+        cx_select(prev); // or cx_select(cx_sel_builtin);
+        return ret;
+    }
+    else
+        return dotp_sw(as, bs, n);
+}
+```
+
+==== Shared CX library, caller save example
+
+```C++
+int func(int); // external, might access our shared CX state
+
+int dotp_c(cx_sel_t cx_mac_sel, int as[], int bs[], unsigned n) {
+    if (cx_sel_is_cx(cx_mac_sel)) {
+        cx_sel_t prev = cx_select(cx_mac_sel);
+		size_t size = cx_save((void*)0, 0);
+		void* pv = alloca(size);
+
+        int ret = cx_mac_reset();
+        for (int i = 0; i < n; ++i) {
+			cx_save(pv, size);
+			int func_a_i = func(as[i]);
+			cx_restore(pv, size);
+
+            ret = cx_mac_mac(func_a_i, bs[i]);
+		}
+
+        cx_select(prev); // or cx_select(cx_sel_builtin);
+        return ret;
+    }
+    else
+        return dotp_sw(as, bs, n);
+}
+```
 
 === Implementation considerations (non-normative)
 
