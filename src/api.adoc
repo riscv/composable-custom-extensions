@@ -201,8 +201,6 @@ select the CX instance prior to issuing its custom instructions.
 indicates the specified CX should be opened _shared_; `cx_open_exclusive`
 indicates the specified CX should be opened _exclusive_.
 
-(TODO: incorporate discussion of user thread context inclusion/exclusion.)
-
 ==== Functions
 
 ===== cx_sel_t cx_open(const uuid_t* puuid, cx_open_flags flags);
@@ -221,11 +219,11 @@ selector values.
 ```C++
 cx_sel_t sel_s0 = cx_open(&my_shared_state_cx_uuid, cx_open_shared);
 cx_sel_t sel_s1 = cx_open(&my_shared_state_cx_uuid, cx_open_shared);
-assert(!(cx_sel_is_cx(sel_s0) && cx_sel_is_cx(sel_s1)) || sel_s0 == sel_s1);
+assert(!cx_sel_is_cx(sel_s0) || !cx_sel_is_cx(sel_s1) || sel_s0 == sel_s1);
 
 cx_sel_t sel_x0 = cx_open(&your_exclusive_state_cx_uuid, cx_open_exclusive);
 cx_sel_t sel_x1 = cx_open(&your_exclusive_state_cx_uuid, cx_open_exclusive);
-assert(!(cx_sel_is_cx(sel_x0) && cx_sel_is_cx(sel_x1)) || sel_x0 != sel_x1);
+assert(!cx_sel_is_cx(sel_x0) || !cx_sel_is_cx(sel_x1) || sel_x0 != sel_x1);
 ```
 
 There is no guarantee, across successive open/close intervals, that
@@ -233,7 +231,7 @@ reopening a given CX will succeed, or will obtain the same selector value:
 ```C++
 cx_sel_t sel_s0 = cx_open(&my_shared_state_cx_uuid, cx_open_shared);
 cx_sel_t sel_s1 = cx_open(&my_shared_state_cx_uuid, cx_open_shared);
-assert(!(cx_sel_is_cx(sel_s0) && cx_sel_is_cx(sel_s1)) || sel_s0 == sel_s1);
+assert(!cx_sel_is_cx(sel_s0) || !cx_sel_is_cx(sel_s1) || sel_s0 == sel_s1);
 cx_close(sel_s0);
 // shared CX instance is still in use
 cx_close(sel_s1);
@@ -278,16 +276,19 @@ thread must be closed `n` times.
 On "last close", the thread's CX instance and related resources are
 released.
 
-===== cx_sel_t cx_get_sel(void);
-
-Return the thread's current CX selector value. Each new thread starts
-with a current CX selector value of `cx_sel_builtin`.
+REVIEW: perhaps `cx_open` and `cx_close` should be named `cx_acquire`
+and `cx_release`.
 
 ===== bool cx_sel_is_cx(cx_sel_t sel);
 
 `cx_sel_is_cx` returns `true` iff the CX selector value indicates a
 valid CX instance on this thread; an invalid, built-in, or stale (closed)
 selector returns `false`.
+
+===== cx_sel_t cx_get_sel(void);
+
+Return the thread's current CX selector value. Each new thread starts
+with a current CX selector value of `cx_sel_builtin`.
 
 ===== cx_sel_t cx_select(cx_sel_t sel);
 
@@ -342,7 +343,7 @@ There are two calling conventions:
 
   c. Callers ensure that on callee entry, the current CX selection is `cx_sel_builtin`.
 
-2. Optional CX calling convention: e.g. function attributed `riscv_cx_cc`:
+2. Optional CX calling convention: function attributed `riscv_cx_cc`:
 
   a. The callee preserves the caller's current selection _(callee saved)_.
 
@@ -439,13 +440,14 @@ int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) {
 ==== Shared state CX library -- CX calling convention -- CX instance save/restore
 
 Here this _shared state_ CX `dotp` saves and restores _caller's_
-CX instance state using the CX-agnostic `cx_save` and `cx_restore`
-APIs rather than employing CX-specific save/restore code (for example,
-optimized to save only live registers across calls).
+CX instance state using the _CX-agnostic_ `cx_save` and `cx_restore`
+APIs.
+
+An alternative implementation might employ _CX-specific_ save/restore code
+(for example, optimized to save only live registers across calls).
 
 ```C++
-int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) CX_CALL
-{
+int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) CX_CALL {
     if (cx_sel_is_cx(cx_sel_mac)) {
         cx_sel_t prev = cx_select(cx_sel_mac);
 
