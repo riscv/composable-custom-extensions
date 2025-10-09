@@ -451,7 +451,7 @@ int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) CX_CALL {
     if (cx_sel_is_cx(cx_sel_mac)) {
         cx_sel_t prev = cx_select(cx_sel_mac);
 
-        // save callee's CX state
+        // save caller's MAC CX instance state
         size_t size = cx_save(0, 0);
         void* pv = alloca(size);
         cx_save(pv, size);
@@ -474,9 +474,9 @@ int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) CX_CALL {
 
 ==== Shared state CX library -- legacy CC -- CX instance save/restore
 
-Here this shared state CX `dotp` saves and restores _it's own_ CX instance
-state upon every call to an external legacy function. It also selects
-`cx_sel_builtin` prior to each such call.
+Here this shared state CX `dotp` saves and restores _it's own_ MAC CX
+instance state upon every call to an external legacy function. It also
+selects `cx_sel_builtin` prior to each such call.
 
 ```C++
 int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) {
