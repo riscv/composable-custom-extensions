@@ -2,7 +2,7 @@
 == CX API
 
 [WARNING]
-.This section is in the link:http://riscv.org/spec-state[Development state]
+.This section is in the link:http://riscv.org/spec-state[Development state].
 ====
 This section is actively being written and subsections and detail
 are changing daily. Please check back regularly for updates.
@@ -100,16 +100,16 @@ invocations. (TODO: provide additional specificity on this.)
 
 ==== CX state isolation models vs. user thread context state
 
-In some environments / operating systems, a subtle and important
-consideration is whether a given CX instance is to be considered part
-of the _user_ thread context, such that it is automatically saved by,
-e.g., the user C/C++ runtime library in `setjmp's jmp_buf` structure,
-or in `makecontext's ucontext_t` structure.
+A subtle and important consideration (for some environments) is whether a
+given CX instance is to be considered part of the _user_ thread context,
+such that it is automatically saved by, e.g., the user C/C++ runtime
+library in `setjmp's jmp_buf` structure, or in `makecontext's ucontext_t`
+structure.
 
-While it is appealing to couple this behavior to the CX's state model,
+It is appealing to try to couple this behavior to the CX's state model,
 e.g., shared state CXs are preserved in user thread contexts while
-exclusive state CXs are not, it may be useful to keep these decoupled
-and orthogonal. Consider the four cases.
+exclusive state CXs are _not_ -- but it may be useful to keep these
+decoupled and orthogonal. Consider the four cases.
 
 1. Shared state CX instance, included in user thread contexts: this
 follows current practice for RISC-V extensions. (REVIEW: is this true
@@ -129,9 +129,18 @@ a private resource explicitly managed by the specific CX library.
 4. Exclusive state CX instance, included in user thread contexts.
 It is unclear if there is a compelling use case for this combination.
 
-Supporting a distinction between case 1 and 2 seems attractive so for now
-this draft specification supports explicitly decoupling these behaviors
-(see `cx_open_flags` and `cx_open` below).
+Distinguishing between case 1 and 2 seems useful, so this draft
+specification supports decoupling these behaviors (see
+`cx_open_ucontext` below).
+
+==== User thread context includes the thread's current CX selection
+
+Note the distinction between CX Framework state, i.e., thread's
+_current CX (instance) selection_, and various CX instances' state.
+
+The thread's current CX selection (see `cx_select` and `cx_get_sel` below),
+is part of the user thread state. On Linux/glibc it is preserved in
+user thread contexts objects, including `ucontext_t` and `jmp_buf`.
 
 === CX API
 
@@ -315,33 +324,83 @@ with size `size` bytes.
 
 REVIEW: What happens if `!cx_sel_is_cx(cx_get_sel())`?
 
-=== Calling conventions
+=== CX calling conventions
 
-(TODO: Incorporate Darius' presentation of different calling convention attributes and behaviors.)
+The CX calling conventions facilitate disciplined management of the current
+CX selection and shared CX instances, enabling correct, safe composition
+of legacy code that predates the CX Framework, and new code, including
+code that uses built-in custom extensions as well as any number of
+composable custom extensions.
 
-==== Managing the current CX selection
+There are two calling conventions:
 
-==== Exclusive CX library
+1. Default calling convention: e.g. _legacy code_:
 
-==== Shared CX library
+  a. The callee preserves the caller's current CX selection _(callee saved)_.
+
+  b. Shared CX instance state is _not_ preserved across function calls _(*caller* saved)_.
+
+  c. Callers ensure that on callee entry, the current CX selection is `cx_sel_builtin`.
+
+2. Optional CX calling convention: e.g. function attributed `riscv_cx_cc`:
+
+  a. The callee preserves the caller's current selection _(callee saved)_.
+
+  b. Shared CX instance state is preserved across function calls _(callee saved)_.
+
+Initially a thread's current CX selection is `cx_sel_builtin`.
+
+[NOTE]
+====
+The default calling convention ensures that a legacy function, perhaps
+predating CX Framework, that issues the system's built-in custom
+instructions, continues to do so, even if the legacy function is called
+from CX library code.
+
+Various ideas for this calling convention were previously explored in the
+link:https://raw.githubusercontent.com/grayresearch/CX/main/spec/spec.pdf[CX Basis Spec] section
+link:https://github.com/grayresearch/CX/blob/main/spec/cx-abi.adoc[CX-ABI].
+====
 
 === CX library examples (non-normative)
 
-==== Exclusive CX library -- no CX save/restore
+These examples, of a dotproduct CX library employing two custom
+instructions of a multiply-accumulate CX, illustrate how the various
+CX state isolation models and calling conventions interact, for correct
+composition, and what save/restore code might be necessary in hand-written
+or CX-aware-compiler code generation.
+
+Assume:
+```C++
+#define CX_CALL __attribute__((riscv_cx_cc))
+
+// external legacy function
+int legacy_func(int);
+// external CX-aware function
+int cx_cc_func(int) CX_CALL;
+
+inline static int cx_mac_reset() CX_CALL {
+//  return CUSTOM0_R(".insn r 0x0B, 0, 0", 0, 0);
+    return CUSTOM0_R("cx_mac_reset", 0, 0);
+}
+inline static int cx_mac_mac(int a, int b) CX_CALL {
+//  return CUSTOM_R(".insn r 0x0B, 0, 1", a, b);
+    return CUSTOM0_R("cx_mac_mac", a, b);
+}
+```
+
+==== Exclusive state CX library -- CX CC -- no CX instance save/restore
 
 ```C++
-
-int func(int); // external, but cannot access our exclusive CX state
-
-int dotp_c(cx_sel_t cx_mac_sel, int as[], int bs[], unsigned n) {
-    if (cx_sel_is_cx(cx_mac_sel)) {
-        cx_sel_t prev = cx_select(cx_mac_sel);
+int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) CX_CALL {
+    if (cx_sel_is_cx(cx_sel_mac)) {
+        cx_sel_t prev = cx_select(cx_sel_mac);
 
         int ret = cx_mac_reset();
         for (int i = 0; i < n; ++i)
-            ret = cx_mac_mac(func(as[i]), bs[i]);
+            ret = cx_mac_mac(func_cx_cc(as[i]), bs[i]);
 
-        cx_select(prev); // or cx_select(cx_sel_builtin);
+        cx_select(prev);
         return ret;
     }
     else
@@ -349,29 +408,27 @@ int dotp_c(cx_sel_t cx_mac_sel, int as[], int bs[], unsigned n) {
 }
 ```
 
-==== Shared CX library, callee save example
+==== Exclusive state CX library -- legacy CC -- no CX instance save/restore
+
+Here `dotp` must set the current selection to `cx_sel_builtin` prior to
+calling a legacy function, then restore `cx_sel_mac`, prior to issuing
+further CX custom instructions `cx_mac_mac`.
+
 ```C++
-
-int func(int); // external, might access our shared CX state
-
-int dotp_c(cx_sel_t cx_mac_sel, int as[], int bs[], unsigned n) {
-    if (cx_sel_is_cx(cx_mac_sel)) {
-        cx_sel_t prev = cx_select(cx_mac_sel);
-
-		// save callee's CX state
-		size_t size = cx_save((void*)0, 0);
-		void* pv = alloca(size);
-		cx_save(pv, size);
-
-		// reset the state, perform the dot product
+int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) {
+    if (cx_sel_is_cx(cx_sel_mac)) {
+        cx_sel_t prev = cx_select(cx_sel_mac);
         int ret = cx_mac_reset();
-        for (int i = 0; i < n; ++i)
-            ret = cx_mac_mac(func(as[i]), bs[i]);
 
-		// restore callee's CX state
-		cx_restore(pv, size);
+        for (int i = 0; i < n; ++i) {
+            cx_select(cx_sel_builtin);
+            int func_a_i = legacy_func(as[i]);
+            cx_select(cx_sel_mac);
 
-        cx_select(prev); // or cx_select(cx_sel_builtin);
+            ret = cx_mac_mac(func_a_i, bs[i]);
+        }
+
+        cx_select(prev);
         return ret;
     }
     else
@@ -379,33 +436,82 @@ int dotp_c(cx_sel_t cx_mac_sel, int as[], int bs[], unsigned n) {
 }
 ```
 
-==== Shared CX library, caller save example
+==== Shared state CX library -- CX calling convention -- CX instance save/restore
+
+Here this _shared state_ CX `dotp` saves and restores _caller's_
+CX instance state using the CX-agnostic `cx_save` and `cx_restore`
+APIs rather than employing CX-specific save/restore code (for example,
+optimized to save only live registers across calls).
 
 ```C++
-int func(int); // external, might access our shared CX state
+int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) CX_CALL
+{
+    if (cx_sel_is_cx(cx_sel_mac)) {
+        cx_sel_t prev = cx_select(cx_sel_mac);
 
-int dotp_c(cx_sel_t cx_mac_sel, int as[], int bs[], unsigned n) {
-    if (cx_sel_is_cx(cx_mac_sel)) {
-        cx_sel_t prev = cx_select(cx_mac_sel);
-		size_t size = cx_save((void*)0, 0);
-		void* pv = alloca(size);
+        // save callee's CX state
+        size_t size = cx_save(0, 0);
+        void* pv = alloca(size);
+        cx_save(pv, size);
+
+        // reset the state, perform the dot product
+        int ret = cx_mac_reset();
+        for (int i = 0; i < n; ++i)
+            ret = cx_mac_mac(func_cx_cc(as[i]), bs[i]);
+
+        // restore callee's CX state
+        cx_restore(pv, size);
+
+        cx_select(prev);
+        return ret;
+    }
+    else
+        return dotp_sw(as, bs, n);
+}
+```
+
+==== Shared state CX library -- legacy CC -- CX instance save/restore
+
+Here this shared state CX `dotp` saves and restores _it's own_ CX instance
+state upon every call to an external legacy function. It also selects
+`cx_sel_builtin` prior to each such call.
+
+```C++
+int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) {
+    if (cx_sel_is_cx(cx_sel_mac)) {
+        cx_sel_t prev = cx_select(cx_sel_mac);
+        size_t size = cx_save(0, 0);
+        void* pv = alloca(size);
 
         int ret = cx_mac_reset();
         for (int i = 0; i < n; ++i) {
-			cx_save(pv, size);
-			int func_a_i = func(as[i]);
-			cx_restore(pv, size);
+            cx_save(pv, size);
+            cx_select(cx_sel_builtin);
+            int func_a_i = legacy_func(as[i]);
+            cx_select(cx_sel_mac);
+            cx_restore(pv, size);
 
             ret = cx_mac_mac(func_a_i, bs[i]);
-		}
+        }
 
-        cx_select(prev); // or cx_select(cx_sel_builtin);
+        cx_select(prev);
         return ret;
     }
     else
         return dotp_sw(as, bs, n);
 }
 ```
+
+=== Other TODOs (non-normative)
+
+Revisit:
+
+* `cx_uuid` vs. `cxid`
+* `cxinfo`
+* `cxsaveall`, `cxrestoreall`
+* distinguishing `RISCV_CX_INFO_STATE_SIZE` vs `cx_save(0,0)` size
+* `hwprobe` keys (Linux)
+* `cxenable`, `cxdisable`
 
 === Implementation considerations (non-normative)
 
