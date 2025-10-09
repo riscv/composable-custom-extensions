@@ -120,26 +120,28 @@ this follows current practice for RISC-V extensions.
 
 ==== API
 
-(TODO: Move this from pidgin C++ to standard C.)
-
 (TODO: Revise the entire API, below, for better error reporting.)
 
-```C++
-#include <cstdint>
+```C
+#include <stddef.h>
+#include <stdint.h>
 
-struct uuid_t {
-    std::uint64_t   high;
-    std::uint64_t   low;
-};
-enum cx_sel_t {
+typedef struct uuid_t {
+    uint64_t high;
+    uint64_t low;
+} uuid_t;
+
+typedef enum cx_sel_t {
     cx_sel_invalid  = -1,
     cx_sel_builtin  = 0,
     cx_sel_first_cx = 1
-};
-enum cx_open_flags {
+} cx_sel_t;
+
+typedef enum cx_open_flags {
     cx_open_shared      = 0,
-    cx_open_exclusive   = 1
-};
+    cx_open_exclusive   = 1,
+    cx_open_ucontext    = 2,
+} cx_open_flags;
 
 cx_sel_t cx_open(const uuid_t* puuid, cx_open_flags flags);
 void     cx_close(cx_sel_t sel);
