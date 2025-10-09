@@ -380,26 +380,26 @@ int legacy_func(int);
 // external CX-aware function
 int cx_cc_func(int) CX_CALL;
 
-inline static int cx_mac_reset() CX_CALL {
+inline static int mac_reset() CX_CALL {
 //  return CUSTOM0_R(".insn r 0x0B, 0, 0", 0, 0);
-    return CUSTOM0_R("cx_mac_reset", 0, 0);
+    return CUSTOM0_R("mac_reset", 0, 0);
 }
-inline static int cx_mac_mac(int a, int b) CX_CALL {
+inline static int mac_mac(int a, int b) CX_CALL {
 //  return CUSTOM_R(".insn r 0x0B, 0, 1", a, b);
-    return CUSTOM0_R("cx_mac_mac", a, b);
+    return CUSTOM0_R("mac_mac", a, b);
 }
 ```
 
 ==== Exclusive state CX library -- CX CC -- no CX instance save/restore
 
 ```C++
-int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) CX_CALL {
-    if (cx_sel_is_cx(cx_sel_mac)) {
-        cx_sel_t prev = cx_select(cx_sel_mac);
+int dotp(cx_sel_t mac_sel, int as[], int bs[], unsigned n) CX_CALL {
+    if (cx_sel_is_cx(mac_sel)) {
+        cx_sel_t prev = cx_select(mac_sel);
 
-        int ret = cx_mac_reset();
+        int ret = mac_reset();
         for (int i = 0; i < n; ++i)
-            ret = cx_mac_mac(func_cx_cc(as[i]), bs[i]);
+            ret = mac_mac(func_cx_cc(as[i]), bs[i]);
 
         cx_select(prev);
         return ret;
@@ -412,21 +412,21 @@ int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) CX_CALL {
 ==== Exclusive state CX library -- legacy CC -- no CX instance save/restore
 
 Here `dotp` must set the current selection to `cx_sel_builtin` prior to
-calling a legacy function, then restore `cx_sel_mac`, prior to issuing
-further CX custom instructions `cx_mac_mac`.
+calling a legacy function, then restore `mac_sel`, prior to issuing
+further CX custom instructions `mac_mac`.
 
 ```C++
-int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) {
-    if (cx_sel_is_cx(cx_sel_mac)) {
-        cx_sel_t prev = cx_select(cx_sel_mac);
-        int ret = cx_mac_reset();
+int dotp(cx_sel_t mac_sel, int as[], int bs[], unsigned n) {
+    if (cx_sel_is_cx(mac_sel)) {
+        cx_sel_t prev = cx_select(mac_sel);
+        int ret = mac_reset();
 
         for (int i = 0; i < n; ++i) {
             cx_select(cx_sel_builtin);
             int func_a_i = legacy_func(as[i]);
-            cx_select(cx_sel_mac);
+            cx_select(mac_sel);
 
-            ret = cx_mac_mac(func_a_i, bs[i]);
+            ret = mac_mac(func_a_i, bs[i]);
         }
 
         cx_select(prev);
@@ -447,9 +447,9 @@ An alternative implementation might employ _CX-specific_ save/restore code
 (for example, optimized to save only live registers across calls).
 
 ```C++
-int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) CX_CALL {
-    if (cx_sel_is_cx(cx_sel_mac)) {
-        cx_sel_t prev = cx_select(cx_sel_mac);
+int dotp(cx_sel_t mac_sel, int as[], int bs[], unsigned n) CX_CALL {
+    if (cx_sel_is_cx(mac_sel)) {
+        cx_sel_t prev = cx_select(mac_sel);
 
         // save caller's MAC CX instance state
         size_t size = cx_save(0, 0);
@@ -457,9 +457,9 @@ int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) CX_CALL {
         cx_save(pv, size);
 
         // reset the state, perform the dot product
-        int ret = cx_mac_reset();
+        int ret = mac_reset();
         for (int i = 0; i < n; ++i)
-            ret = cx_mac_mac(func_cx_cc(as[i]), bs[i]);
+            ret = mac_mac(func_cx_cc(as[i]), bs[i]);
 
         // restore callee's CX state
         cx_restore(pv, size);
@@ -479,21 +479,21 @@ instance state upon every call to an external legacy function. It also
 selects `cx_sel_builtin` prior to each such call.
 
 ```C++
-int dotp(cx_sel_t cx_sel_mac, int as[], int bs[], unsigned n) {
-    if (cx_sel_is_cx(cx_sel_mac)) {
-        cx_sel_t prev = cx_select(cx_sel_mac);
+int dotp(cx_sel_t mac_sel, int as[], int bs[], unsigned n) {
+    if (cx_sel_is_cx(mac_sel)) {
+        cx_sel_t prev = cx_select(mac_sel);
         size_t size = cx_save(0, 0);
         void* pv = alloca(size);
 
-        int ret = cx_mac_reset();
+        int ret = mac_reset();
         for (int i = 0; i < n; ++i) {
             cx_save(pv, size);
             cx_select(cx_sel_builtin);
             int func_a_i = legacy_func(as[i]);
-            cx_select(cx_sel_mac);
+            cx_select(mac_sel);
             cx_restore(pv, size);
 
-            ret = cx_mac_mac(func_a_i, bs[i]);
+            ret = mac_mac(func_a_i, bs[i]);
         }
 
         cx_select(prev);
