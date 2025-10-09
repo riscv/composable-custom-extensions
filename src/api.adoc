@@ -10,9 +10,12 @@ are changing daily. Please check back regularly for updates.
 
 === Introduction (non-normative)
 
-This section specifies the CX API (application programming interface)
+This section specifies the _CX API_ (application programming interface)
 that _CX libraries_ use to discover, select, use, share, and manage
 composable custom extensions.
+
+The CX API is implemented, in each environment, by a _CX Runtime_,
+typically in concert with a CX-aware operating system.
 
 The API provides common, uniform CX programming services, including CX
 naming, discovery, versioning, use, state models, error handling, and
@@ -93,28 +96,42 @@ CX state per hart. Its custom instructions may access the one currently
 selected instance state and their behavior may depend upon it. An
 exclusive state CX library may rely upon its sole ownership of the CX
 instance, and therefore need not save/restore its state across
-invocations.
+invocations. (TODO: provide additional specificity on this.)
 
-==== CX state isolation models vs. thread context state
+==== CX state isolation models vs. user thread context state
 
-A subtle and important consideration is whether a given CX instance
-is considered part of the _user_ thread context, such that it is
-automatically saved by the user C/C++ runtime library in `setjmp's
-jmp_buf` structure and in `makecontext's ucontext_t` structure.
+In some environments / operating systems, a subtle and important
+consideration is whether a given CX instance is to be considered part
+of the _user_ thread context, such that it is automatically saved by,
+e.g., the user C/C++ runtime library in `setjmp's jmp_buf` structure,
+or in `makecontext's ucontext_t` structure.
 
-Is it useful to explicitly determine whether a given CX instance should
-be part of the user thread context? Consider the four cases.
+While it is appealing to couple this behavior to the CX's state model,
+e.g., shared state CXs are preserved in user thread contexts while
+exclusive state CXs are not, it may be useful to keep these decoupled
+and orthogonal. Consider the four cases.
 
-1. Shared state CX instance, included in user thread contexts:
-this follows current practice for RISC-V extensions.
+1. Shared state CX instance, included in user thread contexts: this
+follows current practice for RISC-V extensions. (REVIEW: is this true
+for -V vector state on Linux / glibc? -- is it automatically added to
+`ucontext_t` upon use?)
 
-2. Shared state CX instance, not included in user thread contexts.
+2. Shared state CX instance, _not_ included in user thread contexts.
+If a new shared state CX (e.g., an AME-like CX) has an enormous
+memory footprint, it may be performance-prohibitive to include it in
+user context records.
 
-3. Exclusive state CX instance, included in user thread contexts.
+3. Exclusive state CX instance, _not_ included in user thread contexts.
+This is the expected way to use a private state CX. It is treated as
+an owned _hardware object_, much like another heap allocated object,
+a private resource explicitly managed by the specific CX library.
 
-4. Exclusive state CX instance, not included in user thread contexts.
+4. Exclusive state CX instance, included in user thread contexts.
+It is unclear if there is a compelling use case for this combination.
 
-(TODO: study how Linux handles -V vector extension in kernel and glibc.)
+Supporting a distinction between case 1 and 2 seems attractive so for now
+this draft specification supports explicitly decoupling these behaviors
+(see `cx_open_flags` and `cx_open` below).
 
 === CX API
 
@@ -140,7 +157,7 @@ typedef enum cx_sel_t {
 typedef enum cx_open_flags {
     cx_open_shared      = 0,
     cx_open_exclusive   = 1,
-    cx_open_ucontext    = 2,
+    cx_open_ucontext    = 2
 } cx_open_flags;
 
 cx_sel_t cx_open(const uuid_t* puuid, cx_open_flags flags);
@@ -228,6 +245,11 @@ on one thread does not ensure the CX may also opened on other threads.
 Two threads may open the same CX, whether shared or exclusive, and
 receive different selector values. Two threads may open different CXs,
 whether shared or exclusive, and receive identical selector values.
+
+`cx_open_ucontext` is a probationary (under consideration) _logical-or
+option_, pertinent only to certain OS platforms and language runtimes,
+that signals to the CX Runtime that this CX instance should participate in
+user thread context save/restore behavior.
 
 _Initialization_. A CX instance, opened or reopened for the first time,
 is _initialized_ per the specification of the specific CX. (REVIEW)
