@@ -508,6 +508,147 @@ int dotp(cx_sel_t mac_sel, int as[], int bs[], unsigned n) {
 }
 ```
 
+=== Extension versioning (non-normative)
+
+"The only constant is change" wrote Heraclitus. Across decades,
+instruction set extensions evolve and proliferate into family trees
+of extensions.
+
+Consider 20 years of x86 SIMD ISA extensions:
+MMX (1997) added 64b integer MM0-7 registers (aliased x87 FPU registers) and SIMD;
+SSE (1999) added 128b XMM0-7 registers and single precision FP SIMD;
+SSE2 (2001) added double precision FP SIMD;
+SSE3 (2004), SSSE3 (2006), and SSE4.x (2008) each added new operations;
+AVX (2011) added 256b YMM0-15 registers and 256b FP SIMD;
+AVX2 (2013) added 256b integer SIMD; and
+AVX-512 (2016) added 512b ZMM0-31 registers (and 64b opmask registers) and 512b SIMD.
+(Here, new SIMD registers overlap old, such that ZMM[5] contains YMM[5], which contains XMM[5].)
+
+Similarly, there have been 12 major versions across 25 years of evolution
+of the Microsoft Direct3D API, applications' software contract with the
+GPU, from D3D1 through D3D12.
+
+The CX Framework supports pervasive, dependable composition, including
+composition of elements across _time and space_. So a rich software
+application, comprising _n_ separately authored and versioned CX
+libraries, composed together, runs correctly on old or new hardware,
+which variously implements old or new versions of various CXs.
+
+Each CX software library depends on specific CX behavior. _Any_
+change, removing or adding any state or behavior, is potentially
+disastrous. Therefore the CX Framework requires that CXs (i.e., abstract
+ISA contracts) are immutable, and identified by unique IDs, burned into
+CX software binaries.
+
+==== CX version negotiation
+
+When there are multiple versions of a CX, and various CX libraries that
+each require certain CX versions, and various systems implementing
+different subsets of CX versions, the CX programming model entails
+explicit dynamic discovery-powered _version negotiation_ to arrive at
+the best CX version to use, by a given library, running on a given system.
+A CX library will request (discover) its preferred CX. If not available,
+the library may fall back, requesting another version of the CX, or some
+other CX entirely. This may happen several times. Then, if no acceptable
+CX, or another version of a CX, is discovered, the library must fall back
+to pure software or issue an error.
+
+Thus a future system may implement several versions of a CX, and each
+library running on that system may discover one of the CX versions it
+requires. Similarly a future CX library can iteratively discover the
+best CX version available on any given current system hardware.
+
+==== Versioning vs. shared or exclusive CX instance models
+
+A consequence of this composable programming model, with version
+negotiation, is that two CX libraries, separately authored, but running
+on the same thread, may attempt to discover and use two different versions
+of a CX.
+
+This is a simple matter when a given CX supports an exclusive CX instance
+model. Each CX library will receive its own exclusive CX instance of the
+specific CX version it negotiated for. One library might use instance
+of an earlier CX version, with less instance state, another might use
+a newer CX instance with more instance state. They do not interfere.
+
+When a given CX supports a shared CX instance model, CX versioning is
+more difficult. One CX library may discover and use an earlier version
+of the CX, while another may discover and use a later version. As with
+the x86 MMX...AVX example above, the CX instance state (e.g., extension
+registers and CSRs) for the new CX version may be shared with the old
+CX version, only if the state of the new version is a true superset of
+the old version. If the new CX version adds some state _and removes some
+state_, an instance of this new CX cannot be shared with a CX library
+which requires the full state and behavior of the old CX.
+
+For such a CX, such _breaking changes_ (to CX state or behavior) may
+require a system to provide both a shareable old CX instance and a
+disjoint shareable new CX instance to software.
+
+Alternatively, discovering a shared instance of one version of such a
+CX might cause subsequent discovery of other incompatible versions
+to fail.
+
+Also, in the true superset case, where a single shared CX instance
+can be shared by CX libraries, old and new, CX-agnostic `cx_save` and
+`cx_restore` APIs and user context support may insulate each library
+from the complexities of its current extension's state's save/restore.
+
+(It may not suffice for an MMX library to save/restore MMX0-7 registers,
+when these are actually overlaid upon the ZMM0-31 registers that are
+shared with other AVX libraries on the thread.)
+
+==== Semantic versioning?
+
+It has been proposed, not adopted, that the individual CXs of a family
+tree of CX versions be identified by semantic versioning (semver.org).
+
+So instead of version negotiation by explicit discovery for, e.g.,
+`MY_CX_v3_3_UUID`, then `MY_CX_v3_1_UUID`, then `MY_CX_v1_1_UUID`, a
+CX library might discover for `(MY_CX_UUID,"3.2")` or `"3.2.8"`
+and request the CX Runtime to discover the best (most recent?) CX
+implemented on the present system.
+
+Under semantic versioning, for a CX with a shared CX instance state
+model, each new major CX version, by definition an _incompatible_ change,
+would require a different shared CX instance.
+
+Although CX API support for semantic versioning is appealing, 
+as a convenience facility, it introduces new problems. It can sometimes
+be impossible to represent a series of CX versions in a linear timeline.
+Sometimes an ISA extension's version family tree forks and forever
+diverges. Sometimes it reconverges.
+
+In the x86 MMX...AVX example, there have been different x86 processors
+released with different supersets and subsets of AVX-2 and AVX-512
+instructions. While this can be handled in extension-specific software,
+e.g., walking a complex series of _CPUID_ discovery tables, in the CX
+world the basic UUID discovery mechanism is necessary and sufficient.
+
+==== Subsetting?
+
+A common scenario will entail a given system faithfully implementing
+some proper _subset_ of a CX. Perhaps all CX state is implemented, but only
+a subset of the CX's custom instructions. This is similar to the case of
+the RISC-V `-M` (mul/div) extension which led to the subsequent RISC-V
+`-Zmmul` (mul only) extension.
+
+Should the CX API support discovery of such CX subsets, and how?
+
+A CX library that discovers a CX may then use any of its custom
+instructions. What happens when the library issues a custom instruction
+that is not implemented? Silent corruption is not acceptable, whereas
+an illegal instruction trap might be in some circumstances.
+
+A simple and robust approach here is to treat any subset of a CX as a new
+and different CX with a unique CX UUID. Then CX library software requires
+only the subset behavior or state can explicitly discover for just that.
+
+Furthermore, in a shared CX instance scenario, library A may discover and
+use a CX instance for MY_CX_v2_3_UUID, whereas library B may discover
+and use a CX instance for MY_CX_v3_1_SUBSET_XYZ_UUID. Here it might
+still be possible to share one MY_CX_v3_1 instance between them.
+
 === Other TODOs (non-normative)
 
 Revisit:
