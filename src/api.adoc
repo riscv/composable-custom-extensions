@@ -241,7 +241,7 @@ cannot_assert(cx_sel_is_cx(sel_S2)); // may fail
 cannot_assert(sel_s0 == sel_s2);     // may obtain a different selector value
 ```
 
-In multhreading environments, CX instances, whether shared or exclusive,
+In multihreading environments, CX instances, whether shared or exclusive,
 are never shared across threads. So if thread 0 opens a shared CX
 instance, and thread 1 opens a shared CX instance, these instances are
 disjoint and isolated from each other. CX selector values are _scoped
@@ -369,7 +369,7 @@ link:https://github.com/grayresearch/CX/blob/main/spec/cx-abi.adoc[CX-ABI].
 
 === CX library examples (non-normative)
 
-These examples, of a dotproduct CX library employing two custom
+These examples, of a dot product CX library employing two custom
 instructions of a multiply-accumulate CX, illustrate how the various
 CX state isolation models and calling conventions interact, for correct
 composition, and what save/restore code might be necessary in hand-written
@@ -478,7 +478,7 @@ int dotp(cx_sel_t mac_sel, int as[], int bs[], unsigned n) CX_CALL {
 
 ==== Shared state CX library -- legacy CC -- CX instance save/restore
 
-Here this shared state CX `dotp` saves and restores _it's own_ MAC CX
+Here this shared state CX `dotp` saves and restores _its own_ MAC CX
 instance state upon every call to an external legacy function. It also
 selects `cx_sel_builtin` prior to each such call.
 
@@ -524,39 +524,40 @@ AVX2 (2013) added 256b integer SIMD; and
 AVX-512 (2016) added 512b ZMM0-31 registers (and 64b opmask registers) and 512b SIMD.
 (Here, new SIMD registers overlap old, such that ZMM[5] contains YMM[5], which contains XMM[5].)
 
-Similarly, there have been 12 major versions across 25 years of evolution
-of the Microsoft Direct3D API, applications' software contract with the
-GPU, from D3D1 through D3D12.
+Similary there have been over a dozen major versions of the Microsoft
+Direct3D API for high performance graphics. Change happens, and is tricky
+to cope with after the fact, so dealing with change merits a sound,
+uniform versioning strategy.
 
 The CX Framework supports pervasive, dependable composition, including
-composition of elements across _time and space_. So a rich software
+composition of elements across _time and space_. A rich software
 application, comprising _n_ separately authored and versioned CX
-libraries, composed together, runs correctly on old or new hardware,
-which variously implements old or new versions of various CXs.
+libraries, composed together, must run correctly on old and new systems,
+which variously implement old and/or new versions of various CXs.
 
-Each CX software library depends on specific CX behavior. _Any_
+Each CX software library depends on specific CX(s)' behavior(s). _Any_
 change, removing or adding any state or behavior, is potentially
-disastrous. Therefore the CX Framework requires that CXs (i.e., abstract
-ISA contracts) are immutable, and identified by unique IDs, burned into
-CX software binaries.
+disastrous. Therefore the CX Framework requires that CXs are immutable
+and are identified for all time by UUIDs that may be burned into CX
+software binaries.
 
 ==== CX version negotiation
 
 When there are multiple versions of a CX, and various CX libraries that
 each require certain CX versions, and various systems implementing
-different subsets of CX versions, the CX programming model entails
-explicit dynamic discovery-powered _version negotiation_ to arrive at
-the best CX version to use, by a given library, running on a given system.
-A CX library will request (discover) its preferred CX. If not available,
-the library may fall back, requesting another version of the CX, or some
-other CX entirely. This may happen several times. Then, if no acceptable
-CX, or another version of a CX, is discovered, the library must fall back
-to pure software or issue an error.
+different subsets of CX versions, the CX programming model uses dynamic
+discovery-powered _version negotiation_ to arrive at the best CX version
+to use, by a given library, running on a given system. A CX library
+will request (discover) its preferred CX. If not available, the library
+may fall back, requesting another version of the CX, or some other
+CX entirely. If necessary this may happen several times. Then, if no
+acceptable CX, or another version of a CX, is discovered, the library
+must fall back to pure software or issue an error.
 
-Thus a future system may implement several versions of a CX, and each
-library running on that system may discover one of the CX versions it
-requires. Similarly a future CX library can iteratively discover the
-best CX version available on any given current system hardware.
+Thus a CX library and a CX hardware implementation, developed by
+different organizations in different decades can dynamically determine
+the best, most up-to-date CX that's mutually supported by both of them
+in the present system.
 
 ==== Versioning vs. shared or exclusive CX instance models
 
@@ -613,9 +614,9 @@ Under semantic versioning, for a CX with a shared CX instance state
 model, each new major CX version, by definition an _incompatible_ change,
 would require a different shared CX instance.
 
-Although CX API support for semantic versioning is appealing, 
-as a convenience facility, it introduces new problems. It can sometimes
-be impossible to represent a series of CX versions in a linear timeline.
+Although CX API support for semantic versioning is appealing, as a
+convenience facility, it introduces new problems. It can sometimes be
+impossible to represent a series of CX versions in a linear timeline.
 Sometimes an ISA extension's version family tree forks and forever
 diverges. Sometimes it reconverges.
 
@@ -627,9 +628,9 @@ world the basic UUID discovery mechanism is necessary and sufficient.
 
 ==== Subsetting?
 
-A common scenario will entail a given system faithfully implementing
-some proper _subset_ of a CX. Perhaps all CX state is implemented, but only
-a subset of the CX's custom instructions. This is similar to the case of
+A common scenario will entail a system faithfully implementing some
+proper _subset_ of a CX. Perhaps all CX state is implemented, but only a
+subset of the CX's custom instructions. This is similar to the case of
 the RISC-V `-M` (mul/div) extension which led to the subsequent RISC-V
 `-Zmmul` (mul only) extension.
 
@@ -648,6 +649,19 @@ Furthermore, in a shared CX instance scenario, library A may discover and
 use a CX instance for MY_CX_v2_3_UUID, whereas library B may discover
 and use a CX instance for MY_CX_v3_1_SUBSET_XYZ_UUID. Here it might
 still be possible to share one MY_CX_v3_1 instance between them.
+
+==== Inspired by Microsoft Component Object Model (COM)
+
+COM is Microsoft's framework for disciplined software component reuse, used across
+hundreds of separately authored dynamic libraries, proven at industry
+scale for over 30 years. See
+link:https://learn.microsoft.com/en-us/windows/win32/com/the-component-object-model[The Component Object Model].
+Like COM, the CX versioning strategy has these elements:
+
+* Independently authored, immutable interface contracts (CXs), self-named by UUIDs
+* Components (CXUs) implement one _or more_ interfaces (CXs), often different CX versions
+* Across systems there may be different implementations (different CXUs) for a given interface (CX)
+* Use dynamic discovery to find the best available interface (CX) to use _here_, a negotiation across time and space
 
 === Other TODOs (non-normative)
 
