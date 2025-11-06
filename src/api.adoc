@@ -327,27 +327,31 @@ REVIEW: What happens if `!cx_sel_is_cx(cx_get_sel())`?
 
 === CX calling conventions
 
-The CX calling conventions facilitate disciplined management of the current
-CX selection and shared CX instances, enabling correct, safe composition
-of legacy code that predates the CX Framework, and new code, including
-code that uses built-in custom extensions as well as any number of
-composable custom extensions.
+The CX calling conventions facilitate disciplined management of the
+current CX selection and shared CX instances, enabling correct, safe
+composition of legacy code that predates the CX Framework, and new code,
+including code that uses built-in custom extensions as well as any number
+of composable custom extensions.
 
 There are two calling conventions:
 
 1. Default calling convention: e.g. _legacy code_:
 
-  a. The callee preserves the caller's current CX selection _(callee saved)_.
+  a. On entry to callee, the current CX selection is
+     `cx_sel_builtin`. (Caller ensures this.)
 
-  b. Shared CX instance state is _not_ preserved across function calls _(*caller* saved)_.
+  b. On return from callee, the current CX selection is
+     `cx_sel_builtin`. (Callee ensures this.)
 
-  c. Callers ensure that on callee entry, the current CX selection is `cx_sel_builtin`.
+  c. Shared CX instance state is _not_ preserved across function calls
+     _(*caller* saved)_.
 
 2. Optional CX calling convention: function attributed `riscv_cx_cc`:
 
-  a. The callee preserves the caller's current selection _(callee saved)_.
+  a. Callee preserves the caller's current selection _(callee saved)_.
 
-  b. Shared CX instance state is preserved across function calls _(callee saved)_.
+  b. Shared CX instance state is preserved across function calls
+     _(callee saved)_.
 
 Initially a thread's current CX selection is `cx_sel_builtin`.
 
