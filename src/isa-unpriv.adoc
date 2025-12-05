@@ -1,5 +1,6 @@
 [[isa-unpriv]]
 :secnums:
+[[isa-cx-mux]]
 == Unprivileged CX Multiplexing
 
 The unprivileged Composable Custom Extensions Extension supports _CX

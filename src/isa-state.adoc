@@ -1,8 +1,97 @@
 [[isa-state]]
-== Privileged State Management
+:secnums:
+== Unprivileged Extension State Context Management Extension
+
+=== Introduction
+
+Traditionally, each new stateful ISA extension requires new operating
+system context switch code, user runtime code, and/or compiler support
+to save, restore, and manage its particular new CSRs, register files,
+tightly coupled memories, etc. across thread switches and/or across
+function calls. This leads to increased costs, incompatible one-off
+solutions, and inconsistent enablement of new extensions across
+diverse software environments.
+
+The extension state context management extension provides an extension
+agnostic, _uniform_ way to initialize, manage, save, and restore the
+state context of any composable custom extension.
+
+It employs <<isa-cx-mux,CX multiplexing>>. The state context data of
+the hart's _selected_ CX instance may be read or written, word by
+word, via two new standard CSRs, `cxidx` and `cxdata`. The `cxidx`
+CSR specifies the index of the word of extension state context data
+accessed by a read or write of the `cxdata` CSR.
+
+By zeroing `cxidx` and performing a series of `cxdata` reads/writes,
+software may uniformly save/restore the selected extension's state
+context data to/from an opaque state context blob in memory.
+
+.New CX State Context Management CSRs
+[cols="2,2,2,10"]
+[%autowidth]
+|===
+| Address | Privilege | Name | Description
+
+| 0xTBD | URW | `cxidx` | CX state index
+| 0xTBD | URW | `cxdata` | CX state data
+|===
+
+=== CX State Context Index (`cxidx`)
+
+The read-write WARL XLEN-wide CX state index CSR, `cxidx` specifies
+the index of the word of CX state context data to access via the
+`cxdata` CSR.
+
+`cxidx` can represent any valid index of the state context data of the
+selected CX, but it might not be able represent an invalid index.
+`cxidx` is zeroed following `cxsetsel`.
 
 [TIP]
 ====
-Specify an ISA extension to uniformly initialize, save, and restore
-any CX state context.
+(_Alternative:_ `cxidx` can represent any valid index of the state context
+data of _any_ implemented CX. `cxidx` is unchanged following `cxsetsel`.
 ====
+
+Writing to `cxidx` when `cxsel` is 0 or invalid is undefined.
+Writing an invalid index to `cxidx` is undefined.
+
+=== CX State Context Data (`cxdata`)
+
+The read-write WARL XLEN-wide CX state index CSR, `cxdata` is used to
+read and/or write one word of the selected CX's state context data.
+
+When `cxdata` is read (e.g., `csrrw rd,cxdata,x0`), one word of the currently
+selected CX state context data, at valid index `cxidx` is copied to the
+destination register.
+
+When `cxdata` is written (e.g., `csrrw x0,cxdata,rs1`), the source register value
+is written to one word of the currently selected CX state context data, at valid index `cxidx`.
+
+When `cxdata` is read and written (e.g., `csrrw rd,cxdata,rs1`), both effects occur.
+
+When `cxdata` is read and/or written, `cxidx` is incremented by one (a _side-effect_).
+Following read/write of the last word of the selected CX's state context data,
+the value of `cxidx` is undefined.
+
+When `cxidx` is not a valid index of the selected CX's state context data,
+read/write of `cxdata` is undefined.
+
+Accessing `cxdata` using variants of `csrrs` or `csrrc` is undefined.
+
+=== Example CX context switch (non-normative)
+
+This code selects and swaps a CX state context with a previously saved state context blob.
+
+```assembly
+;; a0: mycx selector
+;; a1: address of CX state context blob
+;; a2: address just past CX state context blob
+    cxsel a0            ; select mycx
+    csrw cxidx,x0       ; zero cxidx
+loop:
+    ld t0,(a1)          ; load a word
+    csrrw t1,cxdata,t0  ; swap (R/W) it
+    sd t1,(a1)          ; save a word
+    add a1,a1,8         ; next word of blob
+    blt a1,a2,loop      ; do-while
+```

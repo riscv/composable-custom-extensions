@@ -314,7 +314,7 @@ Each new thread starts with a current CX selector value of `cx_sel_builtin`.
 ===== cx_sel_t cx_select(cx_sel_t sel);
 
 `cx_select` returns the thread's prior CX selection, and sets the thread's
-current CX selection to the CX selector value argument.
+current CX selection to `sel`.
 
 When the current CX selector indicates a valid CX instance, custom
 instructions and custom CSR accesses are performed by this CX instance;
@@ -328,7 +328,6 @@ signal an error condition.
 ===== ssize_t cx_save(void* pv, size_t size);
 
 `cx_save` returns 0 if the current CX selection is `cx_sel_builtin`.
-
 `cx_save` returns -1 and sets `errno` if the current CX selection is invalid.
 
 `cx_save` with `pv == NULL` returns the number of bytes necessary to save
@@ -348,7 +347,6 @@ ERRORS
 ===== ssize_t cx_restore(void* pv, size_t size);
 
 `cx_restore` returns 0 if the current CX selection is `cx_sel_builtin`.
-
 `cx_restore` returns -1 and sets `errno` if the current CX selection is invalid.
 
 `cx_restore` with `pv == NULL` returns 0.
@@ -384,7 +382,7 @@ There are two calling conventions:
      `cx_sel_builtin`. (Callee ensures this.)
 
   c. Shared CX instance state is _not_ preserved across function calls
-     _(*caller* saved)_.
+     _(caller saved)_.
 
 2. Optional CX calling convention: function attributed `riscv_cx_cc`:
 
