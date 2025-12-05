@@ -43,44 +43,57 @@ the index of the word of CX state context data to access via the
 `cxdata` CSR.
 
 `cxidx` can represent any valid index of the state context data of the
-selected CX, but it might not be able represent an invalid index.
-`cxidx` is zeroed following `cxsetsel`.
+selected CX. `cxidx` is undefined followed `cxsetsel`.
 
-[TIP]
+[NOTE]
 ====
-(_Alternative:_ `cxidx` can represent any valid index of the state context
-data of _any_ implemented CX. `cxidx` is unchanged following `cxsetsel`.
+Alternative proposal: `cxidx` can represent any valid index of the state
+context data of _any_ implemented CX. `cxidx` is unchanged following
+`cxsetsel`.
 ====
 
-Writing to `cxidx` when `cxsel` is 0 or invalid is undefined.
-Writing an invalid index to `cxidx` is undefined.
+Writing an invalid index value to `cxidx` may write some other legal
+value, which may be a valid legal value.
+
+[NOTE]
+====
+For example a two bit `cxidx` implementation suffices for a CX with
+a four word state context, and such a `cxidx` can only represent four
+legal values 0-3, all valid indices.
+====
 
 === CX State Context Data (`cxdata`)
 
 The read-write WARL XLEN-wide CX state index CSR, `cxdata` is used to
 read and/or write one word of the selected CX's state context data.
 
-When `cxdata` is read (e.g., `csrrw rd,cxdata,x0`), one word of the currently
+When `cxdata` is read (e.g., `csrrs rd,cxdata,x0`), one word of the currently
 selected CX state context data, at valid index `cxidx` is copied to the
 destination register.
 
-When `cxdata` is written (e.g., `csrrw x0,cxdata,rs1`), the source register value
-is written to one word of the currently selected CX state context data, at valid index `cxidx`.
+A `cxdata` access by `csrrs` or `csrrc` variant is always a read (not
+read-write) operation regardless of the source operand value.
 
-When `cxdata` is read and written (e.g., `csrrw rd,cxdata,rs1`), both effects occur.
+When `cxdata` is written (e.g., `csrrw x0,cxdata,rs1`), the source
+register value is written to one word of the currently selected CX state
+context data, at valid index `cxidx`.
 
-When `cxdata` is read and/or written, `cxidx` is incremented by one (a _side-effect_).
-Following read/write of the last word of the selected CX's state context data,
-the value of `cxidx` is undefined.
+When `cxdata` is read and written (e.g., `csrrw rd,cxdata,rs1`), both
+effects occur.
 
-When `cxidx` is not a valid index of the selected CX's state context data,
-read/write of `cxdata` is undefined.
+Following each `cxdata` access, the value `cxidx + 1` is written to
+`cxidx`.
 
-Accessing `cxdata` using variants of `csrrs` or `csrrc` is undefined.
+Following read/write of the last word of the selected CX's
+state context data, the value of `cxidx` is undefined.
+
+When `cxsel` is 0 or invalid, or when `cxidx` is not a valid index of the
+selected CX's state context data, read or write of `cxdata` is undefined.
 
 === Example CX context switch (non-normative)
 
-This code selects and swaps a CX state context with a previously saved state context blob.
+This code selects and swaps a CX state context with a previously saved
+state context blob.
 
 ```assembly
 ;; a0: mycx selector
