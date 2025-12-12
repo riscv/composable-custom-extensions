@@ -16,15 +16,18 @@ The extension state context management extension provides an extension
 agnostic, _uniform_ way to initialize, manage, save, and restore the
 state context of any composable custom extension.
 
-It employs <<isa-cx-mux,CX multiplexing>>. The state context data of
-the hart's _selected_ CX instance may be read or written, word by
-word, via two new standard CSRs, `cxidx` and `cxdata`. The `cxidx`
+It works with <<isa-cx-mux,CX multiplexing>>. The state context data
+of the hart's _selected_ CX instance may be read or written, word by
+word, via two new standard CSRs, `cxsidx` and `cxsdata`. The `cxsidx`
 CSR specifies the index of the word of extension state context data
-accessed by a read or write of the `cxdata` CSR.
+accessed by a read or write of the `cxsdata` CSR.
 
-By zeroing `cxidx` and performing a series of `cxdata` reads/writes,
+By zeroing `cxsidx` and performing a series of `cxsdata` reads/writes,
 software may uniformly save/restore the selected extension's state
 context data to/from an opaque state context blob in memory.
+
+_All_ custom extension state is accessed with (`cxsidx`, `cxsdata`)
+CSRs, specifically including any custom CSRs.
 
 .New CX State Context Management CSRs
 [cols="2,2,2,10"]
@@ -32,63 +35,86 @@ context data to/from an opaque state context blob in memory.
 |===
 | Address | Privilege | Name | Description
 
-| 0xTBD | URW | `cxidx` | CX state index
-| 0xTBD | URW | `cxdata` | CX state data
+| 0xTBD | URW | `cxsidx`  | CX state index
+| 0xTBD | URW | `cxsdata` | CX state data
 |===
 
-=== CX State Context Index (`cxidx`)
+=== CX State Context Index (`cxsidx`)
 
-The read-write WARL XLEN-wide CX state index CSR, `cxidx` specifies
-the index of the word of CX state context data to access via the
-`cxdata` CSR.
+The read-write WARL XLEN-wide CX state index CSR, `cxsidx` specifies the
+index of the word of CX state context data to access via the `cxsdata`
+CSR.
 
-`cxidx` can represent any valid index of the state context data of the
-selected CX. `cxidx` is undefined followed `cxsetsel`.
+`cxsidx` can represent any valid index of the state context data of the
+selected CX. `cxsidx` is undefined following `cxsetsel`.
+
+Valid values for `cxsidx` are 0 through `size-1`, where `size` is the size,
+in words, of the CX state context data of the selected custom extension.
 
 [NOTE]
 ====
-Alternative proposal: `cxidx` can represent any valid index of the state
-context data of _any_ implemented CX. `cxidx` is unchanged following
+The state context size for a custom extension can be obtained through
+a platform specific discovery mechanism.
+====
+
+[NOTE]
+====
+The state context size for a custom extension may vary, e.g., from system
+to system.
+====
+
+[NOTE]
+====
+The state context size for a custom extension is constant during execution
+on a given system.
+====
+
+[NOTE]
+====
+Alternative proposal: `cxsidx` can represent any valid index of the state
+context data of _any_ implemented CX. `cxsidx` is unchanged following
 `cxsetsel`.
 ====
 
-Writing an invalid index value to `cxidx` may write some other legal
-value, which may be a valid legal value.
+[NOTE]
+====
+Writing an invalid index value to `cxsidx` may write a valid or invalid
+legal value. For example a two bit `cxsidx` implementation suffices
+for a CX with four words of state context data, and such a `cxsidx`
+can only represent four legal values 0-3, all valid indices.
+====
+
+=== CX State Context Data (`cxsdata`)
+
+The read-write WARL XLEN-wide CX state index CSR, `cxsdata` is used to
+read and/or write one word of the selected CX's state context data.
+
+When `cxsdata` is read (e.g., `csrrs rd,cxsdata,x0`), one word of the
+selected CX state context data, at valid index `cxsidx` is written to
+the destination register.
+
+When `cxsdata` is written (e.g., `csrrw x0,cxsdata,rs1`), the source
+value is written to one word of the selected CX state context data,
+at valid index `cxsidx`.
+
+When `cxsdata` is read and written (e.g., `csrrw rd,cxsdata,rs1`), both
+effects occur.
 
 [NOTE]
 ====
-For example a two bit `cxidx` implementation suffices for a CX with
-a four word state context, and such a `cxidx` can only represent four
-legal values 0-3, all valid indices.
+A `cxsdata` read-write access by a `csrrs` or `csrrc` variant sets or
+clears bits of the indexed word of the selected CX state and writes the
+original value to the destination register.
 ====
 
-=== CX State Context Data (`cxdata`)
+Following each `cxsdata` access, the value `cxsidx + 1` is written to
+`cxsidx`.
 
-The read-write WARL XLEN-wide CX state index CSR, `cxdata` is used to
-read and/or write one word of the selected CX's state context data.
+Following read/write of the last word of the selected CX's state context
+data, the value of `cxsidx` is undefined.
 
-When `cxdata` is read (e.g., `csrrs rd,cxdata,x0`), one word of the currently
-selected CX state context data, at valid index `cxidx` is copied to the
-destination register.
-
-A `cxdata` access by `csrrs` or `csrrc` variant is always a read (not
-read-write) operation regardless of the source operand value.
-
-When `cxdata` is written (e.g., `csrrw x0,cxdata,rs1`), the source
-register value is written to one word of the currently selected CX state
-context data, at valid index `cxidx`.
-
-When `cxdata` is read and written (e.g., `csrrw rd,cxdata,rs1`), both
-effects occur.
-
-Following each `cxdata` access, the value `cxidx + 1` is written to
-`cxidx`.
-
-Following read/write of the last word of the selected CX's
-state context data, the value of `cxidx` is undefined.
-
-When `cxsel` is 0 or invalid, or when `cxidx` is not a valid index of the
-selected CX's state context data, read or write of `cxdata` is undefined.
+When `cxsel` is 0 or invalid, or when `cxsidx` is not a valid index of the
+selected CX's state context data, read or write of `cxsdata` is undefined.
 
 === Example CX context switch (non-normative)
 
@@ -100,10 +126,10 @@ state context blob.
 ;; a1: address of CX state context blob
 ;; a2: address just past CX state context blob
     cxsel a0            ; select mycx
-    csrw cxidx,x0       ; zero cxidx
+    csrw cxsidx,x0      ; zero cxsidx
 loop:
     ld t0,(a1)          ; load a word
-    csrrw t1,cxdata,t0  ; swap (R/W) it
+    csrrw t1,cxsdata,t0 ; swap (R/W) it
     sd t1,(a1)          ; save a word
     add a1,a1,8         ; next word of blob
     blt a1,a2,loop      ; do-while
