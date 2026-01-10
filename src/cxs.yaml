@@ -1,0 +1,84 @@
+# SPDX-License-Identifier: (GPL-2.0 OR MIT)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/riscv/cxs.yaml#
+$schema: http://devicetree.org/meta-schemas/base.yaml#
+
+title: RISC-V CXs
+
+maintainers:
+  - Darius Rad <darius@bluespec.com>
+
+description: |
+  This document provides the schema for describing composable custom
+  extensions (CXs) available on a CPU.
+
+properties:
+  reg:
+    minimum: 1
+    description:
+      The ID of this CX node (CXID).
+
+  uuid:
+    $ref: /schemas/types.yaml#/definitions/uint8-array
+    minItems: 16
+    maxItems: 16
+    description:
+      The UUID of this CX.
+
+  vendorid:
+    $ref: /schemas/types.yaml#/definitions/uint64
+    description:
+      The vendor ID for this CX.
+
+  archid:
+    $ref: /schemas/types.yaml#/definitions/uint64
+    description:
+      The architecture ID for this CX.
+
+  impid:
+    $ref: /schemas/types.yaml#/definitions/uint64
+    description:
+      The implementation ID for this CX.
+
+  state-size:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    default: 0
+    description:
+      The size in bytes of one state context.  If omitted, a state
+      size of zero is assumed.
+
+  state-count:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    default: 1
+    minimum: 1
+    description:
+      The total number of state contexts provided by this CX on this
+      CPU.  If omitted, a single state context is assumed.
+
+required:
+  - uuid
+
+examples:
+  - |
+    cxs {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        cx@1 {
+            reg = <1>;
+            uuid = [ 12 34 56 78 9a bc de f0 11 22 33 44 55 66 77 88 ];
+            vendorid = <0x12345678>;
+            archid = <0x87654321>;
+            impid = <0xabcdef0>;
+            state-size = <4096>;
+            state-count = <4>;
+        };
+        cx@2 {
+            reg = <2>;
+            uuid = [ aa 00 aa 00 aa 00 aa 00 aa 00 aa 00 aa 00 aa 00 ];
+            vendorid = <0xaaaaaaaa>;
+            archid = <0xa0a0a0a0>;
+            impid = <0x87654321>;
+        };
+    };

@@ -11,14 +11,30 @@ specification mechanisms.
 
 === Devicetree
 
+This section includes devicetree bindings for composable custom
+extensions that will be submit upstream to Linux.
+
+[NOTE]
+====
+The devicetree bindings in the Linux repository are also used by
+multiple projects other than Linux.
+====
+
 [TIP]
 ====
-Add schema for attributes that identify composable custom extension on
-harts and any necessary parameters, such as state size.
-
-If necessary add schema for identifying multiple CX instances and
-heterogeneous per-hart accessibility of these CX instances.
+A future revison may add bindings for specifying microarchitectural
+details, such as performance characteristics or the connectivity
+between composable custom extensions and harts, so this information is
+available to the kernel and it can act accordingly.
 ====
+
+This file will be submit as
+`Documentation/devicetree/bindings/riscv/cxs.yaml`.
+
+[,yaml]
+----
+include::cxs.yaml[]
+----
 
 === ACPI
 
