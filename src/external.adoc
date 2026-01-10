@@ -9,23 +9,6 @@ be removed from this document.  External specifications include both
 RISC-V and non-RISC-V specifications and other information
 specification mechanisms.
 
-=== Unified Discovery
-
-[NOTE]
-====
-This section will be incorporated into the RISC-V Unified Discovery
-Specification, as appropriate.
-====
-
-[TIP]
-====
-Add schema for identifying composable custom extension on harts and
-any necessary parameters, such as state size.
-
-If necessary add schema for identifying multiple CX instances and
-heterogeneous per-hart accessibility of these CX instances.
-====
-
 === Devicetree
 
 [TIP]
