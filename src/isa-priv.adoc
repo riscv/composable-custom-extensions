@@ -11,10 +11,10 @@ The CX Extension adds the following privileged CSRs.
 |===
 | Address | Privilege | Name   | Description
 | 0xTBD | SRW | `scxstp`  | CX selection translation pointer.
-| 0xTBD | SRW | `scxxs`   | CX context status.
-| 0xTBD | SRW | `scxxs2`  | CX context status 2.
-| 0xTBD | SRW | `scxxsh`  | Upper 32 bits of `scxxs`, RV32 only.
-| 0xTBD | SRW | `scxxs2h` | Upper 32 bits of `scxxs2`, RV32 only.
+| 0xTBD | SRW | `scxxs0`  | CX context status.
+| 0xTBD | SRW | `scxxs1`  | CX context status, RV32 only.
+| 0xTBD | SRW | `scxxs2`  | CX context status.
+| 0xTBD | SRW | `scxxs3`  | CX context status, RV32 only.
 |===
 
 .New CX CSRs for `Zxxx`
@@ -22,15 +22,16 @@ The CX Extension adds the following privileged CSRs.
 [%autowidth]
 |===
 | Address | Privilege | Name   | Description
-| 0xTBD | SRW | `scx1xs`  | CX 1 context status
-| 0xTBD | SRW | `scx2xs`  | CX 2 context status
-|       |     | ⋮       |
-| 0xTBD | SRW | `scx63xs` | CX 63 context status
+| 0xTBD | SRW | `scx1xs0`  | CX 1 context status
+| 0xTBD | SRW | `scx1xs1`  | CX 1 context status, RV32 only.
 
-| 0xTBD | SRW | `scx1xsh`  | Upper 32 bits of `scx1xs`, RV32 only.
-| 0xTBD | SRW | `scx2xsh`  | Upper 32 bits of `scx2xs`, RV32 only.
-|       |     | ⋮        |
-| 0xTBD | SRW | `scx63xsh` | Upper 32 bits of `scx63xs`, RV32 only.
+| 0xTBD | SRW | `scx2xs0`  | CX 2 context status
+| 0xTBD | SRW | `scx2xs1`  | CX 2 context status, RV32 only.
+
+|       |     | ⋮       |
+
+| 0xTBD | SRW | `scx63xs0` | CX 63 context status
+| 0xTBD | SRW | `scx63xs1` | CX 63 context status, RV32 only.
 |===
 
 === CX Selection Translation Pointer (`scxstp`)
@@ -49,6 +50,7 @@ The upper four bits of `scxstp` indicate one of the following modes:
 | 0 | Disabled
 | 1 | Direct
 | 2 | Indirect (`Zxxx` only)
+| 3-15 | Reserved
 |===
 
 ==== Disabled
@@ -80,7 +82,7 @@ Each entry in the CX selection translation table is 32-bits.
 - bit 31: valid
 - bit 30-16: reserved
 - bit 15-8: context index
-- bit 7-0: CXID
+- bit 7-0: CX ID
 
 `cxsel` is interpreted as an index into the CX selection translation
 table.  If the selected CX selection translation table entry has the
@@ -99,38 +101,44 @@ indicated CX ID and context index.
 
 ==== Extension Status
 
-`scxxs` and `scxxs2` are 64-bit wide WARL registers.  They contain two
-bits reflecting the status of the context state for each composable
-custom extension.  The location of the bits corresponds to the CX ID
-of the extension.  The meaning of bits is analogous to the FS and VS
-bits of the `mstatus` register.
+Four registers, `scxxs0` through `scxxs3`, hold the context state
+status for each extension in RV32.  In RV64, the odd numbered
+registers are invalid.
+
+There are two bits of context state status for each composable custom
+extension, the meaning of which is analogous to the FS and VS bits of
+the `mstatus` register.  The location of bits is based on the CX ID of
+the extension.
 
 If the status bits corresponding to a given CX ID are set to
 `Initial`, any attempt to execute custom opcodes mapped to that
 extension will result in an illegal instruction exception.
 
-When `scxstp.mode` is `Direct`, the bits in `scxxs` for CX IDs greater
+When `scxstp.mode` is `Direct`, the bits in `scxxs__n__` for CX IDs greater
 than zero are writable and reflect the status of and control context
 zero of the respective extension.
 
-When `scxstp.mode` is `Indirect`, the bits in `scxxs` for CX IDs
+When `scxstp.mode` is `Indirect`, the bits in `scxxs__n__` for CX IDs
 greater than zero are read-only and reflect a summary of the maximal
 status of all contexts for the respective extension.
 
-==== Multiple Contexts
+==== Additional Extension Status
 
-The `scx1xs` through `scx63xs` registers are only present if `Zxxx` is
+The additional extension status registers, `scx1xs0` and `sxc1xs1`
+through `scx63xs0` and `scx63xs1`, are only present if `Zxxx` is
 implemented and an extension with the corresponding CX ID is present.
+For RV32, a pair of registers is used for each CX ID.  For RV64, only
+the even register (`scx__n__xs0`) is present.
 
-The `scx1xs` through `scx63xs` registers contain the status of the
+The additional extension status registers contain the status of the
 state for each context within each composable custom extension.  Each
 CX ID has a corresponding registers with bits for all contexts.  The
 location of the bits within the register indicate the context index.
-The meaning of bits is analogous to the `scxxs` bits for each
+The meaning of bits is analogous to the `scxxs__n__` bits for each
 extension when `Zxxx` is not present.
 
-NOTE: The `scxnxs` registers are expected to become indirect CSRs.
-Thus, `Zxxx` will require `Sscsrind`.
+NOTE: The `scx__m__xs__n__` registers are expected to become indirect
+CSRs.  Thus, `Zxxx` will require `Sscsrind`.
 
 === Smststeen
 
