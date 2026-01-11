@@ -16,35 +16,35 @@ description: |
 properties:
   reg:
     minimum: 1
-    description:
+    description: |
       The ID of this CX node (CXID).
 
   uuid:
     $ref: /schemas/types.yaml#/definitions/uint8-array
     minItems: 16
     maxItems: 16
-    description:
+    description: |
       The UUID of this CX.
 
   vendorid:
     $ref: /schemas/types.yaml#/definitions/uint64
-    description:
+    description: |
       The vendor ID for this CX.
 
   archid:
     $ref: /schemas/types.yaml#/definitions/uint64
-    description:
+    description: |
       The architecture ID for this CX.
 
   impid:
     $ref: /schemas/types.yaml#/definitions/uint64
-    description:
+    description: |
       The implementation ID for this CX.
 
   state-size:
     $ref: /schemas/types.yaml#/definitions/uint32
     default: 0
-    description:
+    description: |
       The size in bytes of one state context.  If omitted, a state
       size of zero is assumed.
 
@@ -52,7 +52,7 @@ properties:
     $ref: /schemas/types.yaml#/definitions/uint32
     default: 1
     minimum: 1
-    description:
+    description: |
       The total number of state contexts provided by this CX on this
       CPU.  If omitted, a single state context is assumed.
 
