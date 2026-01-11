@@ -113,12 +113,55 @@ as needed.
 
 === Linux
 
-[TIP]
-====
-Add interfaces to `hwprobe`, `prctl`, and `sysfs` to provide discovery of
-composable custom extensions and related parameters and control of
-extension enablement.
+This section describes the user space interface for composable custom
+extensions in Linux.
 
-If necessary add additional interfaces or syscalls to support a multiple
-CX instance model.
+[NOTE]
 ====
+This interface supports using a single shared context per thread.
+====
+
+==== hwprobe
+
+The following keys are added for the `hwprobe()` syscall:
+
+* `RISCV_HWPROBE_KEY_CXID_0`: A bitmask indicating which CX IDs are
+  available to user space.  Bit 0 indicates CX ID 0, and so on.
+
+* `RISCV_HWPROBE_KEY_CX1_CONTEXT_SIZE` +
+  `RISCV_HWPROBE_KEY_CX2_CONTEXT_SIZE` +
+  ⋮ +
+  `RISCV_HWPROBE_KEY_CX63_CONTEXT_SIZE`: Indicates the size in bytes
+  of one state context for the specified custom extension.
+
+* `RISCV_HWPROBE_KEY_CX1_VENDORID` +
+  `RISCV_HWPROBE_KEY_CX2_VENDORID` +
+  ⋮ +
+  `RISCV_HWPROBE_KEY_CX63_VENDORID`: Indicates the vendor ID for the
+  specified custom extension.
+
+* `RISCV_HWPROBE_KEY_CX1_ARCHID` +
+  `RISCV_HWPROBE_KEY_CX2_ARCHID` +
+  ⋮ +
+  `RISCV_HWPROBE_KEY_CX63_ARCHID`: Indicates the architecture ID for
+  the specified custom extension.
+
+* `RISCV_HWPROBE_KEY_CX1_IMPID` +
+  `RISCV_HWPROBE_KEY_CX2_IMPID` +
+  ⋮ +
+  `RISCV_HWPROBE_KEY_CX63_IMPID`: Indicates the implementation ID for
+  the specified custom extension.
+
+* `RISCV_HWPROBE_KEY_IMA_EXT_0`
+** `RISCV_HWPROBE_EXT_CX`: The Composable Custom Extensions Extension
+   is supported.  This represents the CX framework and not a specific
+   custom extension.
+
+==== Composable Custom Extensions Userspace Interface
+
+This file will be submit as `Documentation/arch/riscv/cx.rst`.
+
+[,rst]
+----
+include::cx.rst[]
+----
