@@ -60,30 +60,52 @@ heterogeneous per-hart accessibility of these CX instances.
 This section will be incorporated into the RISC-V psABI Specification.
 ====
 
-==== Composable Custom Extension Aware Calling Convention
+The following ELF flag will be added to `e_flags`:
 
-[TIP]
+* `EF_RISCV_RVCX`: This bit is set when the binary is compiled with
+  the Composable Custom Extension aware calling convention.
+
+The policy for linking for the CX field is as follows:
+
+* Linker should report errors when linking object files with different
+  values for the CX field.
+
+[NOTE]
 ====
-Define a calling convention for handling composable custom extension
-framework state on calls between object files that both support this
-convention.
-
-Define criteria for use by composable custom extension authors in
-defining extension specific calling conventions that support similar
-behavior.
+Evaluate if the ELF flag is necessary, for either or both calling
+conventions.
 ====
 
-==== Legacy Interoperability Calling Convention
+==== Default Calling Convention
 
-[TIP]
+Custom extension state is not preserved across function calls.
+
+`cxsel` is not preserved across function calls.
+
+Procedures may assume that `cxsel` is zero upon entry.  Procedures may
+assume that `cxsel` is zero upon return from a procedure call.
+
+[NOTE]
 ====
-Define calling conventions for handling composable custom extension
-framework state on calls between object files that support composable
-custom extensions (as defined in spec-abi-cx) and those that do not.
+Application software that sets `cxsel` to a non-zero value must set it
+to zero before either returning or calling another procedure.
+====
 
-Define criteria for use by composable custom extension authors in
-defining extension specific calling conventions that support similar
-behavior.
+==== Composable Custom Extension Calling Convention
+
+Procedures may indicate they are utilizing this calling convention
+with the function attribute `riscv_cx_cc`.
+
+Custom extension state is preserved across function calls.
+
+`cxsel` is preserved across function calls.
+
+Procedures may assume that `cxsel` is zero upon entry.
+
+[NOTE]
+====
+Application software that sets `cxsel` to a non-zero value must set it
+to zero before calling another procedure.
 ====
 
 === User Space API
