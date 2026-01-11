@@ -1,12 +1,149 @@
 [[isa-priv]]
 == Privileged Opcode and State Multiplexing
 
+=== Programmer's Model
+
+The CX Extension adds the following privileged CSRs.
+
+.New CX CSRs
+[cols="2,2,2,10",options="header",align="center"]
+[%autowidth]
+|===
+| Address | Privilege | Name   | Description
+| 0xTBD | SRW | `scxstp`  | CX selection translation pointer.
+| 0xTBD | SRW | `scxxs`   | CX context status.
+| 0xTBD | SRW | `scxxs2`  | CX context status 2.
+| 0xTBD | SRW | `scxxsh`  | Upper 32 bits of `scxxs`, RV32 only.
+| 0xTBD | SRW | `scxxs2h` | Upper 32 bits of `scxxs2`, RV32 only.
+|===
+
+.New CX CSRs for `Zxxx`
+[cols="2,2,2,10",options="header",align="center"]
+[%autowidth]
+|===
+| Address | Privilege | Name   | Description
+| 0xTBD | SRW | `scx1xs`  | CX 1 context status
+| 0xTBD | SRW | `scx2xs`  | CX 2 context status
+|       |     | ⋮       |
+| 0xTBD | SRW | `scx63xs` | CX 63 context status
+
+| 0xTBD | SRW | `scx1xsh`  | Upper 32 bits of `scx1xs`, RV32 only.
+| 0xTBD | SRW | `scx2xsh`  | Upper 32 bits of `scx2xs`, RV32 only.
+|       |     | ⋮        |
+| 0xTBD | SRW | `scx63xsh` | Upper 32 bits of `scx63xs`, RV32 only.
+|===
+
+=== CX Selection Translation Pointer (`scxstp`)
+
+The read-write XLEN-wide CX selection translation pointer, `scxstp`,
+broadly controls the availability of composable custom extensions and
+the interpretation of the unprivileged `cxsel` register.
+
+The upper four bits of `scxstp` indicate one of the following modes:
+
+.Selection Translation Modes
+[cols="1,1",options="header",align="center"]
+[%autowidth]
+|===
+| Value | Meaning
+| 0 | Disabled
+| 1 | Direct
+| 2 | Indirect (`Zxxx` only)
+|===
+
+==== Disabled
+
+When `scxstp.mode` is set to `Disabled`, the CX framework is disabled.  The
+remaining bits of `scxstp` are reserved.
+
+When the CX framework is disabled, all use of CX opcodes and CSRs will
+trigger an illegal instruction exception.  The custom opcode space
+will map to the built-in custom extension.
+
+==== Direct
+
+When `scxstp.mode` is set to `Direct`, the CX framework is enabled in
+direct mode.  The remaining bits of `scxstp` are reserved.
+
+In direct mode, `cxsel` is interpreted directly as a CX ID.  When
+`Zxxx` is implemented, the context index is zero.
+
+==== Indirect
+
+When `scxstp.mode` is set to `Indirect`, the CX framework is enabled
+in indirect mode.  The lower bits of `scxstp` provide a PPN for the CX
+selection translation table, a memory mapped table of the format
+described below.  The CX selection translation table is 4 kiB.
+
+Each entry in the CX selection translation table is 32-bits.
+
+- bit 31: valid
+- bit 30-16: reserved
+- bit 15-8: context index
+- bit 7-0: CXID
+
+`cxsel` is interpreted as an index into the CX selection translation
+table.  If the selected CX selection translation table entry has the
+valid bit clear, attempts to execute custom opcodes will result in an
+illegal instruction exception.
+
+If the selected CX selection translation table entry specifies a
+invalid context index or an invalid CX ID, attempts to execute custom
+opcodes will result in an illegal instruction exception.
+
+If all fields of the selected CX selection translation table entry are
+valid, attempts to execute custom opcodes will be performed by the
+indicated CX ID and context index.
+
+=== CX Context Status
+
+==== Extension Status
+
+`scxxs` and `scxxs2` are 64-bit wide WARL registers.  They contain two
+bits reflecting the status of the context state for each composable
+custom extension.  The location of the bits corresponds to the CX ID
+of the extension.  The meaning of bits is analogous to the FS and VS
+bits of the `mstatus` register.
+
+If the status bits corresponding to a given CX ID are set to
+`Initial`, any attempt to execute custom opcodes mapped to that
+extension will result in an illegal instruction exception.
+
+When `scxstp.mode` is `Direct`, the bits in `scxxs` for CX IDs greater
+than zero are writable and reflect the status of and control context
+zero of the respective extension.
+
+When `scxstp.mode` is `Indirect`, the bits in `scxxs` for CX IDs
+greater than zero are read-only and reflect a summary of the maximal
+status of all contexts for the respective extension.
+
+==== Multiple Contexts
+
+The `scx1xs` through `scx63xs` registers are only present if `Zxxx` is
+implemented and an extension with the corresponding CX ID is present.
+
+The `scx1xs` through `scx63xs` registers contain the status of the
+state for each context within each composable custom extension.  Each
+CX ID has a corresponding registers with bits for all contexts.  The
+location of the bits within the register indicate the context index.
+The meaning of bits is analogous to the `scxxs` bits for each
+extension when `Zxxx` is not present.
+
+NOTE: The `scxnxs` registers are expected to become indirect CSRs.
+Thus, `Zxxx` will require `Sscsrind`.
+
+=== Smststeen
+
+The CX framework adds a CX bit to `mstateen`, `sstateen`, and `hstateen`.
+
+[NOTE]
+====
+Composable custom extensions does not require `Smststeen`.
+====
+
 [TIP]
 ====
-Specify an ISA extension for more privileged code to grant access to a
-CX to less privileged code, and to enable privileged code to trap and
-emulate CX instructions/CSRs.
-
-If necessary the ISA extension also supports access control to
-multiple CX instances of the same CX.
+`mstateen0.C`, `sstateen0.C`, and/or `hstateen0.C`, must be set to
+enable access to custom state, including that within composable custom
+extensions.
 ====
