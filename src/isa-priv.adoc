@@ -36,9 +36,10 @@ The CX Extension adds the following privileged CSRs.
 
 === CX Selection Translation Pointer (`scxstp`)
 
-The read-write XLEN-wide CX selection translation pointer, `scxstp`,
-broadly controls the availability of composable custom extensions and
-the interpretation of the unprivileged `cxsel` register.
+The WARL read-write XLEN-wide CX selection translation pointer,
+`scxstp`, broadly controls the availability of composable custom
+extensions and the interpretation of the unprivileged `cxsel`
+register.
 
 The upper four bits of `scxstp` indicate one of the following modes:
 
@@ -58,6 +59,29 @@ The upper four bits of `scxstp` indicate one of the following modes:
 When `scxstp.mode` is set to `Disabled`, the CX framework is disabled.  The
 remaining bits of `scxstp` are reserved.
 
+.Format of `scxstp` in disabled mode.
+[bytefield]
+----
+(defattrs :plain [:plain {:font-family "M+ 1p Fallback"}])
+(def row-header-fn nil)
+(def boxes-per-row 32)
+(def left-margin 200)
+(def right-margin 200)
+
+(draw-box "XLEN-1" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 2 :text-anchor "middle" :borders {}})
+(draw-box "XLEN-4" {:span 1 :text-anchor "end" :borders {}})
+(draw-box "XLEN-5" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 26 :text-anchor "middle" :borders {}})
+(draw-box "0" {:span 1 :text-anchor "end" :borders {}})
+
+(draw-box "Disabled" {:span 4 :text-anchor "middle"})
+(draw-box "Reserved" {:span 28 :text-anchor "middle"})
+
+(draw-box "4" {:span 4 :text-anchor "middle" :borders {}})
+(draw-box "XLEN-4" {:span 28 :text-anchor "middle" :borders {}})
+----
+
 When the CX framework is disabled, all use of CX opcodes and CSRs will
 trigger an illegal instruction exception.  The custom opcode space
 will map to the built-in custom extension.
@@ -66,6 +90,29 @@ will map to the built-in custom extension.
 
 When `scxstp.mode` is set to `Direct`, the CX framework is enabled in
 direct mode.  The remaining bits of `scxstp` are reserved.
+
+.Format of `scxstp` in direct mode.
+[bytefield]
+----
+(defattrs :plain [:plain {:font-family "M+ 1p Fallback"}])
+(def row-header-fn nil)
+(def boxes-per-row 32)
+(def left-margin 200)
+(def right-margin 200)
+
+(draw-box "XLEN-1" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 2 :text-anchor "middle" :borders {}})
+(draw-box "XLEN-4" {:span 1 :text-anchor "end" :borders {}})
+(draw-box "XLEN-5" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 26 :text-anchor "middle" :borders {}})
+(draw-box "0" {:span 1 :text-anchor "end" :borders {}})
+
+(draw-box "Direct" {:span 4 :text-anchor "middle"})
+(draw-box "Reserved" {:span 28 :text-anchor "middle"})
+
+(draw-box "4" {:span 4 :text-anchor "middle" :borders {}})
+(draw-box "XLEN-4" {:span 28 :text-anchor "middle" :borders {}})
+----
 
 In direct mode, `cxsel` is interpreted directly as a CX ID.  When
 `Zxxx` is implemented, the context index is zero.
@@ -77,29 +124,112 @@ in indirect mode.  The lower bits of `scxstp` provide a PPN for the CX
 selection translation table, a memory mapped table of the format
 described below.  The CX selection translation table is 4 kiB.
 
+.Format of `scxstp` in indirect mode for RV32.
+[bytefield]
+----
+(defattrs :plain [:plain {:font-family "M+ 1p Fallback"}])
+(def row-header-fn nil)
+(def boxes-per-row 32)
+(def left-margin 200)
+(def right-margin 200)
+
+(draw-box "31" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 2 :text-anchor "middle" :borders {}})
+(draw-box "28" {:span 1 :text-anchor "end" :borders {}})
+(draw-box "27" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 4 :text-anchor "middle" :borders {}})
+(draw-box "22" {:span 1 :text-anchor "end" :borders {}})
+(draw-box "21" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 20 :text-anchor "middle" :borders {}})
+(draw-box "0" {:span 1 :text-anchor "end" :borders {}})
+
+(draw-box "MODE" {:span 4 :text-anchor "middle"})
+(draw-box "Reserved" {:span 6 :text-anchor "middle"})
+(draw-box "PPN" {:span 22 :text-anchor "middle"})
+
+(draw-box "4" {:span 4 :text-anchor "middle" :borders {}})
+(draw-box "6" {:span 6 :text-anchor "middle" :borders {}})
+(draw-box "22" {:span 22 :text-anchor "middle" :borders {}})
+----
+
+.Format of `scxstp` in indirect mode for RV64.
+[bytefield]
+----
+(defattrs :plain [:plain {:font-family "M+ 1p Fallback"}])
+(def row-header-fn nil)
+(def boxes-per-row 64)
+(def left-margin 200)
+(def right-margin 200)
+
+(draw-box "31" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 2 :text-anchor "middle" :borders {}})
+(draw-box "28" {:span 1 :text-anchor "end" :borders {}})
+(draw-box "27" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 14 :text-anchor "middle" :borders {}})
+(draw-box "44" {:span 1 :text-anchor "end" :borders {}})
+(draw-box "43" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 42 :text-anchor "middle" :borders {}})
+(draw-box "0" {:span 1 :text-anchor "end" :borders {}})
+
+(draw-box "MODE" {:span 4 :text-anchor "middle"})
+(draw-box "Reserved" {:span 16 :text-anchor "middle"})
+(draw-box "PPN" {:span 44 :text-anchor "middle"})
+
+(draw-box "4" {:span 4 :text-anchor "middle" :borders {}})
+(draw-box "16" {:span 16 :text-anchor "middle" :borders {}})
+(draw-box "44" {:span 44 :text-anchor "middle" :borders {}})
+----
+
 Each entry in the CX selection translation table is 32-bits.
 
-- bit 31: valid
-- bit 30-16: reserved
-- bit 15-8: context index
-- bit 7-0: CX ID
+.CX selection translation table entry.
+[bytefield]
+----
+(defattrs :plain [:plain {:font-family "M+ 1p Fallback"}])
+(def row-header-fn nil)
+(def boxes-per-row 32)
+(def left-margin 200)
+(def right-margin 200)
+
+(draw-box "31" {:span 1 :text-anchor "middle" :borders {}})
+(draw-box "30" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 13 :text-anchor "middle" :borders {}})
+(draw-box "16" {:span 1 :text-anchor "end" :borders {}})
+(draw-box "15" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 6 :text-anchor "middle" :borders {}})
+(draw-box "8" {:span 1 :text-anchor "end" :borders {}})
+(draw-box "7" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 6 :text-anchor "middle" :borders {}})
+(draw-box "0" {:span 1 :text-anchor "end" :borders {}})
+
+(draw-box "V" {:span 1 :text-anchor "middle"})
+(draw-box "Reserved" {:span 15 :text-anchor "middle"})
+(draw-box "IDX" {:span 8 :text-anchor "middle"})
+(draw-box "CXID" {:span 8 :text-anchor "middle"})
+
+(draw-box "1" {:span 1 :text-anchor "middle" :borders {}})
+(draw-box "15" {:span 15 :text-anchor "middle" :borders {}})
+(draw-box "8" {:span 8 :text-anchor "middle" :borders {}})
+(draw-box "8" {:span 8 :text-anchor "middle" :borders {}})
+----
 
 `cxsel` is interpreted as an index into the CX selection translation
 table.  If the selected CX selection translation table entry has the
-valid bit clear, attempts to execute custom opcodes will result in an
-illegal instruction exception.
+valid bit (`V`) clear, attempts to execute custom opcodes will result
+in an illegal instruction exception.
 
 If the selected CX selection translation table entry specifies a
-invalid context index or an invalid CX ID, attempts to execute custom
-opcodes will result in an illegal instruction exception.
+invalid context index (`IDX`) or an invalid CX ID (`CXID`), attempts
+to execute custom opcodes will result in an illegal instruction
+exception.
 
 If all fields of the selected CX selection translation table entry are
 valid, attempts to execute custom opcodes will be performed by the
-indicated CX ID and context index.
+indicated CX ID (`CXID`) and context index (`IDX`).
 
 === CX Context Status
 
-==== Extension Status
+==== Context Status
 
 Four registers, `scxxs0` through `scxxs3`, hold the context state
 status for each extension in RV32.  In RV64, the odd numbered
@@ -109,6 +239,104 @@ There are two bits of context state status for each composable custom
 extension, the meaning of which is analogous to the FS and VS bits of
 the `mstatus` register.  The location of bits is based on the CX ID of
 the extension.
+
+.RV32 Context Status CSR layout.
+[bytefield]
+----
+(defattrs :plain [:plain {:font-family "M+ 1p Fallback"}])
+(def row-header-fn nil)
+(def boxes-per-row 40)
+(def left-margin 200)
+(def right-margin 200)
+
+(doseq [n (range 32 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 8 :text-anchor "start" :borders {}})
+
+(doseq [n (range 16 0 -1)]
+  (draw-box (text "cx" :plain (- n 1) "xs") {:span 2}))
+(draw-box "scxxs0" {:span 8 :borders {}})
+
+(doseq [n (range 16)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 8 :borders {}})
+
+(doseq [n (range 32 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 8 :text-anchor "start" :borders {}})
+
+(doseq [n (range 32 16 -1)]
+  (draw-box (text "cx" :plain (- n 1) "xs") {:span 2}))
+(draw-box "scxxs1" {:span 8 :borders {}})
+
+(doseq [n (range 16)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 8 :borders {}})
+
+(doseq [n (range 32 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 8 :text-anchor "start" :borders {}})
+
+(doseq [n (range 48 32 -1)]
+  (draw-box (text "cx" :plain (- n 1) "xs") {:span 2}))
+(draw-box "scxxs2" {:span 8 :borders {}})
+
+(doseq [n (range 16)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 8 :borders {}})
+
+(doseq [n (range 32 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 8 :text-anchor "start" :borders {}})
+
+(doseq [n (range 64 48 -1)]
+  (draw-box (text "cx" :plain (- n 1) "xs") {:span 2}))
+(draw-box "scxxs3" {:span 8 :borders {}})
+
+(doseq [n (range 16)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 8 :borders {}})
+----
+
+.RV64 Context Status CSR layout.
+[bytefield]
+----
+(defattrs :plain [:plain {:font-family "M+ 1p Fallback"}])
+(def row-header-fn nil)
+(def boxes-per-row 80)
+(def left-margin 200)
+(def right-margin 200)
+
+(doseq [n (range 64 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 16 :text-anchor "start" :borders {}})
+
+(doseq [n (range 32 0 -1)]
+  (draw-box (text "cx" :plain (- n 1) "xs") {:span 2}))
+(draw-box "scxxs0" {:span 16 :borders {}})
+
+(doseq [n (range 32)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 16 :borders {}})
+
+(doseq [n (range 64 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 16 :text-anchor "start" :borders {}})
+
+(doseq [n (range 64 32 -1)]
+  (draw-box (text "cx" :plain (- n 1) "xs") {:span 2}))
+(draw-box "scxxs2" {:span 16 :borders {}})
+
+(doseq [n (range 32)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 16 :borders {}})
+----
 
 If the status bits corresponding to a given CX ID are set to
 `Initial`, any attempt to execute custom opcodes mapped to that
@@ -139,6 +367,163 @@ extension when `Zxxx` is not present.
 
 NOTE: The `scx__m__xs__n__` registers are expected to become indirect
 CSRs.  Thus, `Zxxx` will require `Sscsrind`.
+
+.RV32 Additional Context Status CSR layout.
+[bytefield]
+----
+(defattrs :plain [:plain {:font-family "M+ 1p Fallback"}])
+(def row-header-fn nil)
+(def boxes-per-row 40)
+(def left-margin 200)
+(def right-margin 200)
+
+(doseq [n (range 32 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 8 :text-anchor "start" :borders {}})
+
+(doseq [n (range 16 0 -1)]
+  (draw-box (text "cx1xs" :plain (- n 1)) {:span 2}))
+(draw-box "scx1xs0" {:span 8 :borders {}})
+
+(doseq [n (range 16)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 8 :borders {}})
+
+(doseq [n (range 32 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 8 :text-anchor "start" :borders {}})
+
+(doseq [n (range 32 16 -1)]
+  (draw-box (text "cx1xs" :plain (- n 1)) {:span 2}))
+(draw-box "scx1xs1" {:span 8 :borders {}})
+
+(doseq [n (range 16)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 8 :borders {}})
+
+
+(doseq [n (range 32 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 8 :text-anchor "start" :borders {}})
+
+(doseq [n (range 16 0 -1)]
+  (draw-box (text "cx2xs" :plain (- n 1)) {:span 2}))
+(draw-box "scx2xs0" {:span 8 :borders {}})
+
+(doseq [n (range 16)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 8 :borders {}})
+
+(doseq [n (range 32 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 8 :text-anchor "start" :borders {}})
+
+(doseq [n (range 32 16 -1)]
+  (draw-box (text "cx2xs" :plain (- n 1)) {:span 2}))
+(draw-box "scx2xs1" {:span 8 :borders {}})
+
+(doseq [n (range 16)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 8 :borders {}})
+
+
+(draw-box nil {:span 40 :borders {}})
+
+(draw-box "⋮"  {:span 32 :text-anchor "middle" :borders {}})
+(draw-box nil {:span 8 :borders {}})
+
+(draw-box nil {:span 40 :borders {}})
+
+
+(doseq [n (range 32 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 8 :text-anchor "start" :borders {}})
+
+(doseq [n (range 16 0 -1)]
+  (draw-box (text "cx63xs" :plain (- n 1)) {:span 2}))
+(draw-box "scx63xs0" {:span 8 :borders {}})
+
+(doseq [n (range 16)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 8 :borders {}})
+
+(doseq [n (range 32 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 8 :text-anchor "start" :borders {}})
+
+(doseq [n (range 32 16 -1)]
+  (draw-box (text "cx63xs" :plain (- n 1)) {:span 2}))
+(draw-box "scx63xs1" {:span 8 :borders {}})
+
+(doseq [n (range 16)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 8 :borders {}})
+----
+
+.RV64 Additional Context Status CSR layout.
+[bytefield]
+----
+(defattrs :plain [:plain {:font-family "M+ 1p Fallback"}])
+(def row-header-fn nil)
+(def boxes-per-row 80)
+(def left-margin 200)
+(def right-margin 200)
+
+(doseq [n (range 64 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 16 :text-anchor "start" :borders {}})
+
+(doseq [n (range 32 0 -1)]
+  (draw-box (text "cx1xs" :plain (- n 1)) {:span 2}))
+(draw-box "scx1xs0" {:span 16 :borders {}})
+
+(doseq [n (range 32)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 16 :borders {}})
+
+
+(doseq [n (range 64 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 16 :text-anchor "start" :borders {}})
+
+(doseq [n (range 32 0 -1)]
+  (draw-box (text "cx2xs" :plain (- n 1)) {:span 2}))
+(draw-box "scx2xs0" {:span 16 :borders {}})
+
+(doseq [n (range 32)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 16 :borders {}})
+
+
+(draw-box nil {:span 80 :borders {}})
+
+(draw-box "⋮"  {:span 64 :text-anchor "middle" :borders {}})
+(draw-box nil {:span 16 :borders {}})
+
+(draw-box nil {:span 80 :borders {}})
+
+
+(doseq [n (range 64 0 -2)]
+  (draw-box (text (- n 1) :plain) {:span 1 :text-anchor "start" :borders {}})
+  (draw-box (text (- n 2) :plain) {:span 1 :text-anchor "end" :borders {}}))
+(draw-box nil {:span 16 :text-anchor "start" :borders {}})
+
+(doseq [n (range 32 0 -1)]
+  (draw-box (text "cx63xs" :plain (- n 1)) {:span 2}))
+(draw-box "scx63xs0" {:span 16 :borders {}})
+
+(doseq [n (range 32)]
+  (draw-box "2" {:span 2 :borders {}}))
+(draw-box nil {:span 16 :borders {}})
+----
 
 === Smststeen
 
