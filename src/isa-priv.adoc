@@ -114,8 +114,36 @@ direct mode.  The remaining bits of `scxstp` are reserved.
 (draw-box "XLEN-4" {:span 28 :text-anchor "middle" :borders {}})
 ----
 
-In direct mode, `cxsel` is interpreted directly as a CX ID.  When
-`Zxxx` is implemented, the context index is zero.
+In direct mode, `cxsel` is interpreted directly as a CX ID and context
+index.
+
+.Format of `cxsel` in direct mode.
+[bytefield]
+----
+(defattrs :plain [:plain {:font-family "M+ 1p Fallback"}])
+(def row-header-fn nil)
+(def boxes-per-row 32)
+(def left-margin 200)
+(def right-margin 200)
+
+(draw-box "31" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 14 :text-anchor "middle" :borders {}})
+(draw-box "16" {:span 1 :text-anchor "end" :borders {}})
+(draw-box "15" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 6 :text-anchor "middle" :borders {}})
+(draw-box "8" {:span 1 :text-anchor "end" :borders {}})
+(draw-box "7" {:span 1 :text-anchor "start" :borders {}})
+(draw-box nil {:span 6 :text-anchor "middle" :borders {}})
+(draw-box "0" {:span 1 :text-anchor "end" :borders {}})
+
+(draw-box "Reserved" {:span 16 :text-anchor "middle"})
+(draw-box "IDX" {:span 8 :text-anchor "middle"})
+(draw-box "CXID" {:span 8 :text-anchor "middle"})
+
+(draw-box "16" {:span 16 :text-anchor "middle" :borders {}})
+(draw-box "8" {:span 8 :text-anchor "middle" :borders {}})
+(draw-box "8" {:span 8 :text-anchor "middle" :borders {}})
+----
 
 ==== Indirect
 
