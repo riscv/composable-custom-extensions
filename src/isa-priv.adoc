@@ -574,3 +574,18 @@ Composable custom extensions does not require `Smststeen`.
 enable access to custom state, including that within composable custom
 extensions.
 ====
+
+=== Context Discard
+
+The `scxdiscard` instruction is provided to quickly overwrite the
+context selected by `cxsel`.  The resulting value of the state is
+UNSPECIFIED.  The corresponding XS bits for the context are set to
+`Initial`.
+
+Support for the discard operation by a custom extension is optional.
+The presence of this operation is indicated in the platform specific
+discovery mechanism.
+
+If the selected CX ID or context index are invalid, `scxdiscard` will
+trigger an illegal instruction exception.  If the selected CX ID does
+not support the discard operation, the behavior is UNSPECIFIED.

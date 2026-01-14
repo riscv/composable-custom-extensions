@@ -56,6 +56,12 @@ properties:
       The total number of state contexts provided by this CX on this
       CPU.  If omitted, a single state context is assumed.
 
+  discard:
+    type: boolean
+    description: |
+      Indicates support for the discard operation used by the
+      scxdiscard instruction.
+
 required:
   - uuid
 
@@ -73,6 +79,7 @@ examples:
             impid = <0xabcdef0>;
             state-size = <4096>;
             state-count = <4>;
+            discard;
         };
         cx@2 {
             reg = <2>;

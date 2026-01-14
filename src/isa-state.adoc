@@ -116,6 +116,24 @@ data, the value of `cxsidx` is undefined.
 When `cxsel` is 0 or invalid, or when `cxsidx` is not a valid index of the
 selected CX's state context data, read or write of `cxsdata` is undefined.
 
+=== CX Context Discard
+
+The `cxdiscard` instruction is provided to inform the runtime that the
+context state data specified by `cxsel` is no longer useful and need
+not be saved.  `cxdiscard` raises an illegal instruction exception if
+the corresponding `XS` bits are `Off`.  Otherwise, it changes the `XS`
+value to `Initial`.
+
+`cxdiscard` raises an illegal instruction exception if `cxsel`
+specifies an invalid selection.
+
+[NOTE]
+====
+`cxdiscard` does not actually write context state data. For ABI
+purposes, the context state data is UNSPECIFIED after executing this
+instruction.
+====
+
 === Example CX context switch (non-normative)
 
 This code selects and swaps a CX state context with a previously saved
