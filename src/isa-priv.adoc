@@ -338,9 +338,9 @@ the extension.
 (draw-box nil {:span 16 :borders {}})
 ----
 
-If the status bits corresponding to a given CX ID are set to
-`Initial`, any attempt to execute custom opcodes mapped to that
-extension will result in an illegal instruction exception.
+If the status bits corresponding to a given CX ID are set to `Off`,
+any attempt to execute custom opcodes mapped to that extension will
+result in an illegal instruction exception.
 
 When `scxstp.mode` is `Direct`, the bits in `scxxs__n__` for CX IDs greater
 than zero are writable and reflect the status of and control context
