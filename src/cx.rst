@@ -32,7 +32,9 @@ New processes start with all custom extensions disabled.
     with a CX selector that may be used by the `cxsel` instruction to
     select the specified custom extension.
 
-    A given custom extension may be enabled multiple times.
+    A given custom extension may be enabled multiple times.  Each
+    enable must be matched with a corresponding disable for the
+    extension to be disabled.
 
     `flags` is currently unused and should be set to zero.
 
