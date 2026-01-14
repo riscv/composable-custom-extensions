@@ -34,6 +34,12 @@ The CX Extension adds the following privileged CSRs.
 | 0xTBD | SRW | `scx63xs1` | CX 63 context status, RV32 only.
 |===
 
+The privileged CSRs and opcodes are present when `Ztodo` is present
+and the supervisor extension is present.
+
+When the supervisor extension is not present, `cxsel` is interpreted
+as in Direct mode.
+
 === CX Selection Translation Pointer (`scxstp`)
 
 The WARL read-write XLEN-wide CX selection translation pointer,
