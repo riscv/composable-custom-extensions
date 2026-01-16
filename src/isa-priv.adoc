@@ -132,7 +132,7 @@ index.
 (def left-margin 200)
 (def right-margin 200)
 
-(draw-box "31" {:span 1 :text-anchor "start" :borders {}})
+(draw-box "XLEN-1" {:span 1 :text-anchor "start" :borders {}})
 (draw-box nil {:span 14 :text-anchor "middle" :borders {}})
 (draw-box "16" {:span 1 :text-anchor "end" :borders {}})
 (draw-box "15" {:span 1 :text-anchor "start" :borders {}})
@@ -146,7 +146,7 @@ index.
 (draw-box "IDX" {:span 8 :text-anchor "middle"})
 (draw-box "CXID" {:span 8 :text-anchor "middle"})
 
-(draw-box "16" {:span 16 :text-anchor "middle" :borders {}})
+(draw-box "XLEN-16" {:span 16 :text-anchor "middle" :borders {}})
 (draw-box "8" {:span 8 :text-anchor "middle" :borders {}})
 (draw-box "8" {:span 8 :text-anchor "middle" :borders {}})
 ----
