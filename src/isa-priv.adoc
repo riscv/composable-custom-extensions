@@ -5,7 +5,7 @@
 
 The CX Extension adds the following privileged CSRs.
 
-.New CX CSRs
+.New CX CSRs for `Zcx`
 [cols="2,2,2,10",options="header",align="center"]
 [%autowidth]
 |===
@@ -17,7 +17,7 @@ The CX Extension adds the following privileged CSRs.
 | 0xTBD | SRW | `scxxs3`  | CX context status, RV32 only.
 |===
 
-.New CX CSRs for `Zxxx`
+.New CX CSRs for `Zcxmulti`
 [cols="2,2,2,10",options="header",align="center"]
 [%autowidth]
 |===
@@ -34,7 +34,7 @@ The CX Extension adds the following privileged CSRs.
 | 0xTBD | SRW | `scx63xs1` | CX 63 context status, RV32 only.
 |===
 
-The privileged CSRs and opcodes are present when `Ztodo` is present
+The privileged CSRs and opcodes are present when `Zcxmulti` is present
 and the supervisor extension is present.
 
 When the supervisor extension is not present, `cxsel` is interpreted
@@ -56,7 +56,7 @@ The upper four bits of `scxstp` indicate one of the following modes:
 | Value | Meaning
 | 0 | Disabled
 | 1 | Direct
-| 2 | Indirect (`Zxxx` only)
+| 2 | Indirect (`Zcxmulti` only)
 | 3-15 | Reserved
 |===
 
@@ -376,18 +376,18 @@ If the status bits corresponding to a given CX ID are set to `Off`,
 any attempt to execute custom opcodes mapped to that extension will
 result in an illegal instruction exception.
 
-When `Zxxx` is not implemented, the bits in `scxxs__n__` for CX IDs
-greater than zero are writable and reflect the status of and control
-context zero of the respective extension.
+When `Zcxmulti` is not implemented, the bits in `scxxs__n__` for CX
+IDs greater than zero are writable and reflect the status of and
+control context zero of the respective extension.
 
-When `Zxxx` is implemented, the bits in `scxxs__n__` for CX IDs
+When `Zcxmulti` is implemented, the bits in `scxxs__n__` for CX IDs
 greater than zero are read-only and reflect a summary of the maximal
 status of all contexts for the respective extension.
 
 ==== Additional Extension Status
 
 The additional extension status registers, `scx1xs0` and `sxc1xs1`
-through `scx63xs0` and `scx63xs1`, are only present if `Zxxx` is
+through `scx63xs0` and `scx63xs1`, are only present if `Zcxmulti` is
 implemented and an extension with the corresponding CX ID is present.
 For RV32, a pair of registers is used for each CX ID.  For RV64, only
 the even register (`scx__n__xs0`) is present.
@@ -397,10 +397,10 @@ state for each context within each composable custom extension.  Each
 CX ID has a corresponding registers with bits for all contexts.  The
 location of the bits within the register indicate the context index.
 The meaning of bits is analogous to the `scxxs__n__` bits for each
-extension when `Zxxx` is not present.
+extension when `Zcxmulti` is not present.
 
 NOTE: The `scx__m__xs__n__` registers are expected to become indirect
-CSRs.  Thus, `Zxxx` will require `Sscsrind`.
+CSRs.  Thus, `Zcxmulti` will require `Sscsrind`.
 
 .RV32 Additional Context Status CSR layout.
 [bytefield]

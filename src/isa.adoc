@@ -3,3 +3,11 @@
 
 This section contains the ISA specification for RISC-V Composable
 Custom Extensions.
+
+There are two ISA specifications described in the specification, `Zcx`
+and `Zcxmulti`.  The `Zcx` extension includes all the necessary base
+functionality, including unprivileged opcode multiplexing and state
+management, as well as privileged access control.  The `Zcx` extension
+supports a single context per composable custom extension.  The
+`Zcxmulti` extension depends on `Zcx` and provides the necessary CSRs
+and behavior to support multiple contexts per extension.
