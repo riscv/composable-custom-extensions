@@ -376,11 +376,11 @@ If the status bits corresponding to a given CX ID are set to `Off`,
 any attempt to execute custom opcodes mapped to that extension will
 result in an illegal instruction exception.
 
-When `scxstp.mode` is `Direct`, the bits in `scxxs__n__` for CX IDs greater
-than zero are writable and reflect the status of and control context
-zero of the respective extension.
+When `Zxxx` is not implemented, the bits in `scxxs__n__` for CX IDs
+greater than zero are writable and reflect the status of and control
+context zero of the respective extension.
 
-When `scxstp.mode` is `Indirect`, the bits in `scxxs__n__` for CX IDs
+When `Zxxx` is implemented, the bits in `scxxs__n__` for CX IDs
 greater than zero are read-only and reflect a summary of the maximal
 status of all contexts for the respective extension.
 
