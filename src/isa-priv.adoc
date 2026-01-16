@@ -177,7 +177,7 @@ described below.  The CX selection translation table is 4 kiB.
 (draw-box nil {:span 20 :text-anchor "middle" :borders {}})
 (draw-box "0" {:span 1 :text-anchor "end" :borders {}})
 
-(draw-box "MODE" {:span 4 :text-anchor "middle"})
+(draw-box "Indirect" {:span 4 :text-anchor "middle"})
 (draw-box "Reserved" {:span 6 :text-anchor "middle"})
 (draw-box "PPN" {:span 22 :text-anchor "middle"})
 
@@ -205,7 +205,7 @@ described below.  The CX selection translation table is 4 kiB.
 (draw-box nil {:span 42 :text-anchor "middle" :borders {}})
 (draw-box "0" {:span 1 :text-anchor "end" :borders {}})
 
-(draw-box "MODE" {:span 4 :text-anchor "middle"})
+(draw-box "Indirect" {:span 4 :text-anchor "middle"})
 (draw-box "Reserved" {:span 16 :text-anchor "middle"})
 (draw-box "PPN" {:span 44 :text-anchor "middle"})
 
