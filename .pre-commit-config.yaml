@@ -24,3 +24,6 @@ repos:
     hooks:
       - id: yamlfmt
         args: [--mapping, '2', --sequence, '4', --offset, '2']
+
+# yamlfmt doesn't work correctly, so skip it
+exclude: src/cxs.yaml
