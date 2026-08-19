@@ -42,25 +42,19 @@ The read-only XLEN-wide CX selector CSR, `cxsel` specifies the
 extension used to execute CX instructions, and can only be updated by
 the `cxsetsel` instruction.
 
-`cxsel` is a WARL register that must be able to hold all valid
-selector values.  It need not be capable of holding all possible
-invalid selector values.  Prior to writing `cxsel`, implementations
-may convert an invalid value into some other invalid value that
-`cxsel` is capable of holding.
+`cxsel` is a WARL register that must be able to hold all legal
+selector values.
 
-Valid selector values are 0, which indicates the built-in custom
-extension, and any value returned by the platform specific discovery
+Legal selector values are:
+
+- -1, which is the only legal INVALID selector value
+- 0, which indicates the BUILT-IN custom extension
+- any value returned by the platform-specific discovery
 mechanism for use as a selector.
 
-A value of all 1s is an invalid selector value.
+NOTE: Any illegal value written to `cxsel` will be mapped to -1, the INVALID selector value.
 
-[NOTE]
-====
-The all 1s value may be used by software to aid in debugging
-uninitialized variables.
-
-It is not required that the all 1s value be a legal value.
-====
+NOTE: Software should assume selectors are XLEN bits wide, but the precise layout or meaning of individual bits can vary.
 
 NOTE: A CX selector may be _hart specific_.
 
@@ -83,11 +77,11 @@ The CX selector value in `cxsel` determines which specific CX instance
 granted to this hart, or the built-in custom extensions, executes
 CX instructions.
 
-When `cxsel` is 0, CX instructions are executed by the built-in custom
+When `cxsel` is 0, CX instructions are executed by the BUILT-IN custom
 extension.
 
-When `cxsel` is any other valid value, CX instructions are executed by
+When `cxsel` is any other legal value, CX instructions are executed by
 the selected extension.
 
-When `cxsel` is invalid, CX instructions are treated as illegal
+When `cxsel` is INVALID, CX instructions are treated as illegal
 instructions.
